@@ -1,0 +1,8 @@
+User-agent: *
+Disallow: /hg-admin
+Disallow: /cart
+Disallow: /gio-hang
+Disallow: /checkout
+Disallow: /thanh-toan
+
+Sitemap: https://dnv1.biz/sitemap.xml

@@ -1,0 +1,91 @@
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap');
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+
+@theme {
+    --font-sans: 'Be Vietnam Pro', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-heading: 'Montserrat', system-ui, sans-serif;
+    --font-serif: Georgia, serif;
+    --color-roots-primary: #CE171F;
+    --color-roots-dark: #991B1B;
+    --color-roots-forest: #7F1D1D;
+    --color-roots-forest-dark: #450A0A;
+    --color-roots-light: #FFFBEB;
+    --color-roots-red: #CE171F;
+    --color-roots-gold: #FFC700;
+}
+
+@layer base {
+    body {
+        font-family: 'Be Vietnam Pro', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        text-rendering: optimizeLegibility;
+    }
+}
+
+@layer utilities {
+    /* Hide scrollbar */
+    .no-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+    .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+
+    /* Background grid pattern */
+    .bg-grid-white {
+        background-size: 40px 40px;
+        background-image: linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+    }
+    
+    /* Text Gradient Animation */
+    .animate-text-gradient {
+        background-size: 200% auto;
+        animation: textGradient 5s linear infinite;
+    }
+
+    /* Glassmorphism */
+    .glass-panel {
+        @apply bg-zinc-900/40 backdrop-blur-md border border-white/10;
+    }
+
+    /* Mouse Spotlight Hover Card (AlpineJS will set the variables) */
+    .spotlight-card {
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .spotlight-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(
+            600px circle at var(--mouse-x) var(--mouse-y),
+            rgba(255, 255, 255, 0.06),
+            transparent 40%
+        );
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        pointer-events: none;
+        z-index: 10;
+    }
+
+    .spotlight-card:hover::before {
+        opacity: 1;
+    }
+}
+
+@keyframes textGradient {
+    0% { background-position: 0% center; }
+    100% { background-position: 200% center; }
+}

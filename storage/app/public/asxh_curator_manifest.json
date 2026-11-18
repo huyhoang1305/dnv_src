@@ -1,0 +1,100 @@
+{
+    "logo-dnv-asxh-chinh-thuc": {
+        "id": "01M53T22Y072MTRX6WHA8EQA2B",
+        "path": "logo\/logo-dnv-asxh-chinh-thuc.png",
+        "title": "Logo Dự án Thực phẩm An Sinh Xã Hội - DNV",
+        "size": 438232,
+        "dimensions": "960x965"
+    },
+    "logo-dnv-asxh-badge": {
+        "id": "01M53VSXZ2JSXN03DG8HZ8WKKV",
+        "path": "logo\/logo-dnv-asxh-badge.webp",
+        "title": "Logo Huy Hiệu Doanh Nghiệp Việt - ASXH",
+        "size": 120372,
+        "dimensions": "1200x1200"
+    },
+    "banner-seo-dnv-asxh": {
+        "id": "01M53VSY0C4WM17CBX1WR2QH0A",
+        "path": "logo\/banner-seo-dnv-asxh.webp",
+        "title": "Banner Nhận Diện Thương Hiệu Doanh Nghiệp Việt ASXH",
+        "size": 103152,
+        "dimensions": "1200x517"
+    },
+    "tau-van-tai-dnv-vuon-ra-bien-lon": {
+        "id": "01M53VSY1N6JSNJWJ1JTZ9H1EH",
+        "path": "about\/tau-van-tai-dnv-vuon-ra-bien-lon.webp",
+        "title": "Tàu vận tải DNV vươn ra biển lớn",
+        "size": 103152,
+        "dimensions": "1200x517"
+    },
+    "quy-trinh-dat-hang-asxh": {
+        "id": "01M53VSY2WCT9QXEB8Y4H2Z01G",
+        "path": "about\/quy-trinh-dat-hang-asxh.webp",
+        "title": "Quy trình đặt hàng Dự án Thực phẩm An Sinh Xã Hội",
+        "size": 49342,
+        "dimensions": "1200x675"
+    },
+    "dnv-doan-lam-viec-ocm-hoa-ky": {
+        "id": "01M53VSY55NKBYMCC75RGB2GGK",
+        "path": "about\/dnv-doan-lam-viec-ocm-hoa-ky.png",
+        "title": "Đoàn làm việc DNV với Tập đoàn phân phối thực phẩm OCM Hoa Kỳ",
+        "size": 949096,
+        "dimensions": "1150x416"
+    },
+    "dnv-chung-nhan-tieu-chuan-chat-luong": {
+        "id": "01M53VSYA1DEJM05HJNRVN0BTN",
+        "path": "about\/dnv-chung-nhan-tieu-chuan-chat-luong.png",
+        "title": "Chứng nhận tiêu chuẩn chất lượng DNV FDA",
+        "size": 2586067,
+        "dimensions": "1822x955"
+    },
+    "dnv-san-pham-chuan-hoa-xuat-khau": {
+        "id": "01M53VSYG8JVYQTGY0HZSRWDTG",
+        "path": "about\/dnv-san-pham-chuan-hoa-xuat-khau.png",
+        "title": "Sản phẩm Nông sản DNV chuẩn hóa xuất khẩu",
+        "size": 2684094,
+        "dimensions": "1920x867"
+    },
+    "dnv-dong-san-pham-nong-san-che-bien": {
+        "id": "01M53VSYKTQ41H89RG8BQ8H2P2",
+        "path": "about\/dnv-dong-san-pham-nong-san-che-bien.jpg",
+        "title": "Dòng sản phẩm nông sản chế biến DNV",
+        "size": 941653,
+        "dimensions": "6000x2327"
+    },
+    "dnv-san-pham-tai-sieu-thi-hoa-ky": {
+        "id": "01M53VSYRJSP72QEQQ4XH78NCZ",
+        "path": "about\/dnv-san-pham-tai-sieu-thi-hoa-ky.png",
+        "title": "DNV Products Distributed Across Supermarkets in the United States",
+        "size": 2586532,
+        "dimensions": "2039x771"
+    },
+    "dnv-50-san-pham-xuat-khau-quoc-te": {
+        "id": "01M53VSYVNKADDTHM097Q9SXM1",
+        "path": "about\/dnv-50-san-pham-xuat-khau-quoc-te.jpg",
+        "title": "Gần 50 sản phẩm Nông sản thực phẩm mang Thương hiệu DNV xuất khẩu quốc tế",
+        "size": 1294160,
+        "dimensions": "4148x3375"
+    },
+    "dnv-san-pham-tren-ke-sieu-thi-my": {
+        "id": "01M53VSZ22YRHNCW26BW5EBCWZ",
+        "path": "about\/dnv-san-pham-tren-ke-sieu-thi-my.png",
+        "title": "Sản phẩm DNV trên kệ siêu thị Hoa Kỳ",
+        "size": 2771936,
+        "dimensions": "1994x789"
+    },
+    "dnv-nha-may-san-xuat-che-bien-hien-dai": {
+        "id": "01M53VSZ4762R8K60G2X34J224",
+        "path": "about\/dnv-nha-may-san-xuat-che-bien-hien-dai.jpg",
+        "title": "Mở rộng quy mô nhà máy sản xuất chế biến hiện đại DNV",
+        "size": 697215,
+        "dimensions": "6000x1750"
+    },
+    "dnv-chung-nhan-atvstp-quoc-te-2026": {
+        "id": "01M53VSZ59FM8CNZFWNCP1ANP5",
+        "path": "about\/dnv-chung-nhan-atvstp-quoc-te-2026.webp",
+        "title": "Doanh Nghiệp Việt đạt chứng nhận tiêu chuẩn ATVSTP Quốc Tế 2026",
+        "size": 43952,
+        "dimensions": "600x600"
+    }
+}
