@@ -17,6 +17,18 @@
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 sm:py-4 space-y-5 sm:space-y-6">
 
+        <!-- Page Header & H1 -->
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-slate-100 pb-3">
+            <div>
+                <h1 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                    {{ !empty($blog['popular_title']) ? $blog['popular_title'] : 'Thông Tin Hoạt Động & Tin Tức DNV' }}
+                </h1>
+                <p class="text-xs sm:text-sm text-slate-500 mt-1">
+                    Cập nhật các hoạt động xúc tiến thương mại, kiến thức tiêu dùng và chính sách hỗ trợ người lao động
+                </p>
+            </div>
+        </div>
+
         <!-- Category Filter Carousel (Scrollable) -->
         <div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-2 border-b border-slate-100">
             <button 

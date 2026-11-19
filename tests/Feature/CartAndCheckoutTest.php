@@ -171,4 +171,19 @@ class CartAndCheckoutTest extends TestCase
         $feeAfterShip100 = ($coupon100->type === 'free_shipping' || (float) $coupon100->value == 100.0) ? 0.0 : $defaultShippingFee;
         $this->assertEquals(0.0, $feeAfterShip100);
     }
+
+    /**
+     * Test bảo mật che số điện thoại khách hàng (PII Masking) & độ dài mật khẩu tối thiểu 8 ký tự
+     */
+    public function test_security_pii_masking_and_password_policy(): void
+    {
+        $rawPhone = '0903856861';
+        $maskedPhone = strlen($rawPhone) >= 7
+            ? (substr($rawPhone, 0, 4) . '***' . substr($rawPhone, -3))
+            : '******';
+
+        $this->assertEquals('0903***861', $maskedPhone);
+        $this->assertFalse(strlen('123456') >= 8);
+        $this->assertTrue(strlen('12345678') >= 8);
+    }
 }

@@ -78,9 +78,9 @@
                             $sub = $this->subtotal;
                             $percent = min(100, round(($sub / $threshold) * 100));
                             $remain = max(0, $threshold - $sub);
-                            $progressTpl = $cart['freeship_text_progress'] ?? 'Mua thêm {remain} để được FREESHIP HỎA TỐC 1H';
+                            $progressTpl = $cart['freeship_text_progress'] ?? 'Mua thêm {remain} để được MIỄN PHÍ VẬN CHUYỂN';
                             $progressText = str_replace('{remain}', number_format($remain, 0, ',', '.') . 'đ', $progressTpl);
-                            $reachedText = !empty($cart['freeship_text_reached']) ? $cart['freeship_text_reached'] : '🎉 Bạn đã đủ điều kiện nhận FREESHIP HỎA TỐC 1H!';
+                            $reachedText = !empty($cart['freeship_text_reached']) ? $cart['freeship_text_reached'] : '🎉 Bạn đã đủ điều kiện nhận MIỄN PHÍ VẬN CHUYỂN TOÀN QUỐC!';
                         @endphp
                         <div class="bg-white rounded-2xl p-3 sm:p-5 border border-emerald-100 shadow-2xs space-y-2">
                             <div class="flex items-center justify-between gap-2 text-xs">
@@ -273,7 +273,7 @@
                                     wire:model="voucherCode" 
                                     wire:keydown.enter="applyVoucher" 
                                     type="text" 
-                                    placeholder="Nhập mã (FREESHIP25, GIAM50K...)" 
+                                    placeholder="Nhập mã (FREESHIP, GIAM50K, GIAM20K...)" 
                                     class="w-full text-xs border border-slate-200 rounded-xl px-3 py-2.5 uppercase font-medium focus:border-[#CE171F] focus:outline-none"
                                 >
                                 <button 

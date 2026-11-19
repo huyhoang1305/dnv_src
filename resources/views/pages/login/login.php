@@ -176,18 +176,26 @@ new #[Layout('layouts.app')] class extends Component
 
         if (!Auth::check()) return;
 
+        $throttleKey = 'change_pwd:' . Auth::id() . ':' . request()->ip();
+        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+            $minutes = ceil(RateLimiter::availableIn($throttleKey) / 60);
+            $this->profileError = "Bạn đã nhập sai mật khẩu quá nhiều lần. Vui lòng thử lại sau {$minutes} phút.";
+            return;
+        }
+
         if (empty($this->currentPassword)) {
             $this->profileError = 'Vui lòng nhập mật khẩu hiện tại.';
             return;
         }
 
         if (!Hash::check($this->currentPassword, Auth::user()->password)) {
+            RateLimiter::hit($throttleKey, 300);
             $this->profileError = 'Mật khẩu hiện tại không chính xác.';
             return;
         }
 
-        if (strlen($this->newPassword) < 6) {
-            $this->profileError = 'Mật khẩu mới phải có ít nhất 6 ký tự.';
+        if (strlen($this->newPassword) < 8) {
+            $this->profileError = 'Mật khẩu mới phải có ít nhất 8 ký tự.';
             return;
         }
 
@@ -196,6 +204,7 @@ new #[Layout('layouts.app')] class extends Component
             return;
         }
 
+        RateLimiter::clear($throttleKey);
         $user = Auth::user();
         $user->password = Hash::make($this->newPassword);
         $user->save();
@@ -283,14 +292,27 @@ new #[Layout('layouts.app')] class extends Component
             return;
         }
 
+        if (!$user->is_active) {
+            $this->errorMessage = 'Tài khoản này hiện đang tạm khóa. Vui lòng liên hệ bộ phận hỗ trợ DNV.';
+            return;
+        }
+
         RateLimiter::clear($throttleKey);
         Auth::login($user, true);
+        request()->session()->regenerate();
         return $this->redirect('/tai-khoan', navigate: true);
     }
 
     public function submitRegister()
     {
         $this->errorMessage = '';
+
+        $throttleKey = 'register_attempts:' . request()->ip();
+        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+            $minutes = ceil(RateLimiter::availableIn($throttleKey) / 60);
+            $this->errorMessage = "Bạn đã thao tác quá nhiều lần. Vui lòng thử lại sau {$minutes} phút.";
+            return;
+        }
 
         $name = trim($this->name);
         $cleanPhone = preg_replace('/[^0-9]/', '', trim($this->phone));
@@ -302,8 +324,8 @@ new #[Layout('layouts.app')] class extends Component
             return;
         }
 
-        if (empty($cleanPhone) || strlen($cleanPhone) < 9 || strlen($cleanPhone) > 11) {
-            $this->errorMessage = 'Vui lòng nhập số điện thoại hợp lệ (9 - 11 chữ số).';
+        if (empty($cleanPhone) || strlen($cleanPhone) !== 10 || !str_starts_with($cleanPhone, '0')) {
+            $this->errorMessage = 'Số điện thoại không hợp lệ (yêu cầu đúng 10 chữ số và bắt đầu bằng số 0).';
             return;
         }
 
@@ -312,8 +334,8 @@ new #[Layout('layouts.app')] class extends Component
             return;
         }
 
-        if (empty($this->password) || strlen($this->password) < 6) {
-            $this->errorMessage = 'Mật khẩu phải có ít nhất 6 ký tự.';
+        if (empty($this->password) || strlen($this->password) < 8) {
+            $this->errorMessage = 'Mật khẩu bảo mật phải có ít nhất 8 ký tự.';
             return;
         }
 
@@ -330,10 +352,12 @@ new #[Layout('layouts.app')] class extends Component
             ->first();
 
         if ($existingUser) {
+            RateLimiter::hit($throttleKey, 300);
             $this->errorMessage = 'Số điện thoại hoặc Email này đã được đăng ký. Vui lòng chuyển sang tab Đăng nhập.';
             return;
         }
 
+        RateLimiter::hit($throttleKey, 300);
         $user = User::create([
             'name' => $name,
             'phone' => $cleanPhone,
@@ -344,6 +368,7 @@ new #[Layout('layouts.app')] class extends Component
         ]);
 
         Auth::login($user, true);
+        request()->session()->regenerate();
         return $this->redirect('/tai-khoan', navigate: true);
     }
 

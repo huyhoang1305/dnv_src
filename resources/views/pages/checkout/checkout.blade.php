@@ -317,7 +317,7 @@
                                     wire:model="voucherCode" 
                                     wire:keydown.enter="applyVoucher" 
                                     type="text" 
-                                    placeholder="Nhập mã (FREESHIP25, GIAM50K...)" 
+                                    placeholder="Nhập mã (FREESHIP, GIAM50K, GIAM20K...)" 
                                     class="w-full text-xs border border-slate-200 rounded-xl px-3 py-2 uppercase font-medium focus:border-[#CE171F] focus:outline-none"
                                 >
                                 <button 

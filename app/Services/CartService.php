@@ -318,8 +318,11 @@ class CartService
 
         $setting = Setting::getSystemSetting();
         $defaultShippingFee = (float) ($setting?->general_settings['shipping']['default_fee'] ?? 25000);
-        $freeShippingThreshold = (float) ($setting?->general_settings['shipping']['free_shipping_threshold'] 
-            ?? ($setting?->general_settings['shipping']['free_threshold'] ?? 500000));
+        $adminThreshold = (float) ($setting?->interface_settings['cart']['freeship_threshold'] ?? 0);
+        $freeShippingThreshold = $adminThreshold > 0 
+            ? $adminThreshold 
+            : (float) ($setting?->general_settings['shipping']['free_shipping_threshold'] 
+                ?? ($setting?->general_settings['shipping']['free_threshold'] ?? 500000));
 
         if ($subtotal >= $freeShippingThreshold) {
             return 0.0;

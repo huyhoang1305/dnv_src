@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) ?? 'vi' }}">
 
 @php
@@ -8,7 +8,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Favicon & App Icons (DNV Chuẩn) -->
+    <!-- Favicon & App Icons (DNV Chuáº©n) -->
     @php
         $siteFavicon = !empty($setting->general_settings['site_icon']) 
             ? curator_url($setting->general_settings['site_icon']) 
@@ -23,7 +23,7 @@
     @stack('seo')
 
 
-    <!-- Preconnect Fonts: Be Vietnam Pro & Montserrat (Theo chuẩn ASXH Doanh Nghiệp Việt) -->
+    <!-- Preconnect Fonts: Be Vietnam Pro & Montserrat (Theo chuáº©n ASXH Doanh Nghiá»‡p Viá»‡t) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet">
@@ -76,6 +76,10 @@
 
     <!-- Shared Footer Component -->
     <livewire:inc.footer />
+
+    <!-- Global Draggable Local Dev Toolkit Floating Widget (Only in app()->isLocal()) -->
+    
+
 
     @livewireScripts
     {!! $setting->general_settings['scripts']['footer'] ?? '' !!}

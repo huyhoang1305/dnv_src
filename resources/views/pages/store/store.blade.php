@@ -27,30 +27,30 @@
         $hasMap = !empty($resolvedMapIframeUrl);
     @endphp
 
+    @php
+        $isContactRoute = request()->routeIs('contact') || request()->is('lien-he*');
+        $pageHeading = $isContactRoute ? 'Liên Hệ Ban Quản Trị & Hỗ Trợ Khách Hàng' : (!empty($store['title']) ? $store['title'] : 'Hệ Thống Cửa Hàng & Điểm Phân Phối');
+        $pageSubheading = $isContactRoute ? 'Quý khách vui lòng để lại thông tin hoặc liên hệ Hotline để được hỗ trợ nhanh nhất.' : (!empty($store['subtitle']) ? $store['subtitle'] : 'Thông tin chi nhánh và kênh liên hệ chính thức của DNV');
+    @endphp
+
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         <!-- Breadcrumb Navigation -->
         <nav class="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs text-slate-500 whitespace-nowrap overflow-hidden mb-2.5 sm:mb-4">
             <a href="{{ route('home') }}" wire:navigate.hover class="hover:text-[#CE171F] transition shrink-0">Trang chủ</a>
             <i class="fa-solid fa-chevron-right text-[8px] sm:text-[9px] text-slate-300 shrink-0"></i>
-            <span class="font-medium sm:font-semibold text-slate-800 min-w-0 truncate">{{ !empty($store['title']) ? $store['title'] : 'Cửa hàng' }}</span>
+            <span class="font-medium sm:font-semibold text-slate-800 min-w-0 truncate">{{ $isContactRoute ? 'Liên hệ' : (!empty($store['title']) ? $store['title'] : 'Cửa hàng') }}</span>
         </nav>
 
-        <!-- Store Heading & Hero Banner -->
-        @if(!empty($store['title']) || !empty($store['subtitle']))
-            <div class="mb-3 sm:mb-5 text-left border-b border-slate-100 pb-2.5 sm:pb-3">
-                @if(!empty($store['title']))
-                    <h1 class="text-[15px] sm:text-lg md:text-[21px] font-bold text-[#991B1B] tracking-tight leading-snug">
-                        {{ $store['title'] }}
-                    </h1>
-                @endif
-                @if(!empty($store['subtitle']))
-                    <p class="text-[11.5px] sm:text-xs md:text-[13.5px] text-[#52606d] mt-1 font-normal leading-relaxed">
-                        {{ $store['subtitle'] }}
-                    </p>
-                @endif
-            </div>
-        @endif
+        <!-- Store / Contact Heading -->
+        <div class="mb-3 sm:mb-5 text-left border-b border-slate-100 pb-2.5 sm:pb-3">
+            <h1 class="text-[15px] sm:text-lg md:text-[21px] font-bold text-[#991B1B] tracking-tight leading-snug">
+                {{ $pageHeading }}
+            </h1>
+            <p class="text-[11.5px] sm:text-xs md:text-[13.5px] text-[#52606d] mt-1 font-normal leading-relaxed">
+                {{ $pageSubheading }}
+            </p>
+        </div>
 
         @if($bannerUrl)
             <section class="relative rounded-3xl overflow-hidden shadow-sm border border-slate-200/70 mb-6 sm:mb-8">

@@ -37,8 +37,14 @@ new #[Layout('layouts.app')] class extends Component
             ->orderBy('id', 'asc')
             ->get();
 
-        $this->policyContent = ($this->slug ? $this->policyList->firstWhere('slug', $this->slug) : null)
-            ?? $this->policyList->first();
+        if ($this->slug) {
+            $this->policyContent = $this->policyList->firstWhere('slug', $this->slug);
+            if (!$this->policyContent) {
+                abort(404);
+            }
+        } else {
+            $this->policyContent = $this->policyList->first();
+        }
 
         if ($this->policyContent) {
             $this->slug = $this->policyContent->slug;

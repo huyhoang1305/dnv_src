@@ -81,18 +81,33 @@
             </div>
 
             <!-- Modern Horizontal Delivery Stepper -->
+            @php
+                $orderStatus = $orderData['status'] ?? 'pending';
+                $stepLevel = match ($orderStatus) {
+                    'processing', 'Soạn hàng' => 2,
+                    'shipping', 'Đang giao', 'delivering' => 3,
+                    'completed', 'Hoàn thành' => 4,
+                    default => 1, // pending / Chờ xử lý
+                };
+                $progressWidth = match ($stepLevel) {
+                    2 => '25%',
+                    3 => '50%',
+                    4 => '76%',
+                    default => '0%',
+                };
+            @endphp
             <div class="mt-8 pt-8 border-t border-slate-100 max-w-2xl mx-auto">
                 <div class="relative">
                     <!-- Background Connector Line -->
                     <div class="hidden sm:block absolute top-5 left-[12%] right-[12%] h-1 z-0 rounded-full" style="background-color: #E2E8F0;"></div>
-                    <!-- Active Progress Fill (Steps 1 to 2) -->
-                    <div class="hidden sm:block absolute top-5 left-[12%] w-[25%] h-1 z-0 rounded-full" style="background-color: #10B981;"></div>
+                    <!-- Active Progress Fill -->
+                    <div class="hidden sm:block absolute top-5 left-[12%] h-1 z-0 rounded-full" style="background-color: #10B981; width: {{ $progressWidth }};"></div>
 
                     <!-- 4 Steps in Grid -->
                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-2 relative z-10">
-                        <!-- Step 1: Complete -->
+                        <!-- Step 1: Đã nhận đơn -->
                         <div class="flex flex-col items-center text-center">
-                            <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm shadow-md mb-2" style="background-color: #10B981; color: #ffffff; box-shadow: 0 0 0 4px #ffffff;">
+                            <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm shadow-md mb-2" style="background-color: #10B981; color: #ffffff; box-shadow: 0 0 0 4px #ECFDF5;">
                                 <i class="fa-solid fa-check" style="color: #ffffff;"></i>
                             </div>
                             <div class="text-xs font-bold text-slate-800">Đã nhận đơn</div>
@@ -109,31 +124,57 @@
                             </div>
                         </div>
 
-                        <!-- Step 2: Processing (Active) -->
-                        <div class="flex flex-col items-center text-center">
-                            <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm shadow-md mb-2 animate-pulse" style="background-color: #F59E0B; color: #ffffff; box-shadow: 0 0 0 4px #FEF3C7;">
-                                <i class="fa-solid fa-box-open" style="color: #ffffff;"></i>
+                        <!-- Step 2: Đang đóng gói -->
+                        @php
+                            $s2Done = $stepLevel > 2;
+                            $s2Active = $stepLevel === 2;
+                            $s2Bg = $s2Done ? '#10B981' : ($s2Active ? '#F59E0B' : '#F1F5F9');
+                            $s2Color = ($s2Done || $s2Active) ? '#ffffff' : '#64748B';
+                            $s2Ring = $s2Done ? '#ECFDF5' : ($s2Active ? '#FEF3C7' : '#ffffff');
+                        @endphp
+                        <div class="flex flex-col items-center text-center {{ ($s2Done || $s2Active) ? '' : 'opacity-75' }}">
+                            <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm mb-2 {{ $s2Active ? 'animate-pulse shadow-md' : '' }}" style="background-color: {{ $s2Bg }}; color: {{ $s2Color }}; box-shadow: 0 0 0 4px {{ $s2Ring }};">
+                                <i class="fa-solid {{ $s2Done ? 'fa-check' : 'fa-box-open' }}" style="color: {{ $s2Color }};"></i>
                             </div>
-                            <div class="text-xs font-bold text-amber-700">Đang đóng gói</div>
-                            <div class="text-[11px] text-amber-600 font-medium mt-0.5">Kho chuẩn bị hàng</div>
+                            <div class="text-xs {{ $s2Active ? 'font-bold text-amber-700' : ($s2Done ? 'font-bold text-slate-800' : 'font-medium text-slate-600') }}">Đang đóng gói</div>
+                            <div class="text-[11px] {{ $s2Active ? 'text-amber-600 font-medium' : 'text-slate-400' }} mt-0.5">
+                                {{ $s2Done ? 'Đã đóng gói' : ($s2Active ? 'Kho đang chuẩn bị' : 'Chờ kho xử lý') }}
+                            </div>
                         </div>
 
-                        <!-- Step 3: Shipping (Pending) -->
-                        <div class="flex flex-col items-center text-center opacity-70">
-                            <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm mb-2" style="background-color: #F1F5F9; color: #64748B; box-shadow: 0 0 0 4px #ffffff;">
-                                <i class="fa-solid fa-truck-fast" style="color: #64748B;"></i>
+                        <!-- Step 3: Đang giao hàng -->
+                        @php
+                            $s3Done = $stepLevel > 3;
+                            $s3Active = $stepLevel === 3;
+                            $s3Bg = $s3Done ? '#10B981' : ($s3Active ? '#F59E0B' : '#F1F5F9');
+                            $s3Color = ($s3Done || $s3Active) ? '#ffffff' : '#64748B';
+                            $s3Ring = $s3Done ? '#ECFDF5' : ($s3Active ? '#FEF3C7' : '#ffffff');
+                        @endphp
+                        <div class="flex flex-col items-center text-center {{ ($s3Done || $s3Active) ? '' : 'opacity-75' }}">
+                            <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm mb-2 {{ $s3Active ? 'animate-pulse shadow-md' : '' }}" style="background-color: {{ $s3Bg }}; color: {{ $s3Color }}; box-shadow: 0 0 0 4px {{ $s3Ring }};">
+                                <i class="fa-solid {{ $s3Done ? 'fa-check' : 'fa-truck-fast' }}" style="color: {{ $s3Color }};"></i>
                             </div>
-                            <div class="text-xs font-medium text-slate-600">Đang giao hàng</div>
-                            <div class="text-[11px] text-slate-400 mt-0.5">Bàn giao shipper</div>
+                            <div class="text-xs {{ $s3Active ? 'font-bold text-amber-700' : ($s3Done ? 'font-bold text-slate-800' : 'font-medium text-slate-600') }}">Đang giao hàng</div>
+                            <div class="text-[11px] {{ $s3Active ? 'text-amber-600 font-medium' : 'text-slate-400' }} mt-0.5">
+                                {{ $s3Done ? 'Đã giao' : ($s3Active ? 'Đang vận chuyển' : 'Bàn giao shipper') }}
+                            </div>
                         </div>
 
-                        <!-- Step 4: Complete (Pending) -->
-                        <div class="flex flex-col items-center text-center opacity-70">
-                            <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm mb-2" style="background-color: #F1F5F9; color: #64748B; box-shadow: 0 0 0 4px #ffffff;">
-                                <i class="fa-solid fa-circle-check" style="color: #64748B;"></i>
+                        <!-- Step 4: Giao thành công -->
+                        @php
+                            $s4Done = $stepLevel === 4;
+                            $s4Bg = $s4Done ? '#10B981' : '#F1F5F9';
+                            $s4Color = $s4Done ? '#ffffff' : '#64748B';
+                            $s4Ring = $s4Done ? '#ECFDF5' : '#ffffff';
+                        @endphp
+                        <div class="flex flex-col items-center text-center {{ $s4Done ? '' : 'opacity-75' }}">
+                            <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm mb-2 {{ $s4Done ? 'shadow-md' : '' }}" style="background-color: {{ $s4Bg }}; color: {{ $s4Color }}; box-shadow: 0 0 0 4px {{ $s4Ring }};">
+                                <i class="fa-solid fa-circle-check" style="color: {{ $s4Color }};"></i>
                             </div>
-                            <div class="text-xs font-medium text-slate-600">Giao thành công</div>
-                            <div class="text-[11px] text-slate-400 mt-0.5">Nhận hàng & thanh toán</div>
+                            <div class="text-xs {{ $s4Done ? 'font-bold text-emerald-700' : 'font-medium text-slate-600' }}">Giao thành công</div>
+                            <div class="text-[11px] {{ $s4Done ? 'text-emerald-600 font-semibold' : 'text-slate-400' }} mt-0.5">
+                                {{ $s4Done ? 'Đã hoàn tất' : 'Nhận hàng & thanh toán' }}
+                            </div>
                         </div>
                     </div>
                 </div>

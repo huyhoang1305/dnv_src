@@ -12,6 +12,7 @@ use App\Services\GhnService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\RateLimiter;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -243,6 +244,13 @@ new #[Layout('layouts.app')] class extends Component
     {
         $this->errorMessage = '';
 
+        $throttleKey = 'order_submit:' . request()->ip();
+        if (RateLimiter::tooManyAttempts($throttleKey, 10)) {
+            $seconds = RateLimiter::availableIn($throttleKey);
+            $this->errorMessage = "Bạn đã gửi yêu cầu đặt hàng quá nhanh. Vui lòng thử lại sau {$seconds} giây.";
+            return;
+        }
+
         if (empty($this->items)) {
             $this->errorMessage = 'Giỏ hàng của bạn đang trống. Vui lòng thêm sản phẩm trước khi đặt hàng.';
             return;
@@ -325,7 +333,16 @@ new #[Layout('layouts.app')] class extends Component
 
         // 2. LƯU ĐƠN HÀNG VỚI GIÁ THẬT ĐÃ TÍNH TOÁN TRONG TRANSACTION
         try {
+            RateLimiter::hit($throttleKey, 60);
             DB::transaction(function () use ($orderNumber, $fullAddress, $subtotal, $discount, $coupon, $shippingFee, $total, $authoritativeItems) {
+                if ($coupon) {
+                    $lockedCoupon = Coupon::lockForUpdate()->find($coupon->id);
+                    if (!$lockedCoupon || ($lockedCoupon->usage_limit > 0 && $lockedCoupon->used_count >= $lockedCoupon->usage_limit)) {
+                        throw new \RuntimeException('Mã giảm giá vừa hết lượt sử dụng.');
+                    }
+                    $lockedCoupon->increment('used_count');
+                }
+
                 $order = Order::create([
                     'user_id' => Auth::id() ?? null,
                     'order_number' => $orderNumber,
@@ -345,10 +362,6 @@ new #[Layout('layouts.app')] class extends Component
                     'payment_status' => 'unpaid',
                 ]);
 
-                if ($coupon) {
-                    $coupon->increment('used_count');
-                }
-
                 foreach ($authoritativeItems as $item) {
                     $qty = (int) $item['qty'];
                     $price = (float) $item['price'];
@@ -364,18 +377,21 @@ new #[Layout('layouts.app')] class extends Component
                         'total' => $price * $qty,
                     ]);
 
-                    if (!empty($item['id']) && ($prod = Product::find($item['id']))) {
+                    if (!empty($item['id']) && ($prod = Product::lockForUpdate()->find($item['id']))) {
                         $prod->sold_count = (int) ($prod->sold_count ?? 0) + $qty;
                         $prod->stock_quantity = max(0, (int) ($prod->stock_quantity ?? 0) - $qty);
                         $prod->save();
                     }
 
-                    if (!empty($item['variant_id']) && ($var = \App\Models\ProductVariant::find($item['variant_id']))) {
+                    if (!empty($item['variant_id']) && ($var = \App\Models\ProductVariant::lockForUpdate()->find($item['variant_id']))) {
                         $var->stock = max(0, (int) ($var->stock ?? 0) - $qty);
                         $var->save();
                     }
                 }
             });
+        } catch (\RuntimeException $re) {
+            $this->errorMessage = $re->getMessage();
+            return;
         } catch (\Throwable $e) {
             Log::error('Order creation error: ' . $e->getMessage());
             $this->errorMessage = 'Có lỗi xảy ra khi tạo đơn hàng. Vui lòng thử lại sau.';

@@ -189,7 +189,7 @@
                                             </span>
                                         @elseif (in_array($order->status, ['shipping', 'Đang giao', 'delivering']))
                                             <span class="px-3 py-1 rounded-full text-[11px] font-semibold bg-purple-50 text-purple-700 border border-purple-200">
-                                                <i class="fa-solid fa-motorcycle mr-1"></i> Đang giao hỏa tốc
+                                                <i class="fa-solid fa-truck-fast mr-1"></i> Đang giao hàng
                                             </span>
                                         @elseif (in_array($order->status, ['completed', 'Hoàn thành']))
                                             <span class="px-3 py-1 rounded-full text-[11px] font-semibold bg-red-50 text-[#991B1B] border border-red-200">
@@ -396,7 +396,7 @@
                                         wire:model="newPassword" 
                                         type="password" 
                                         class="w-full text-xs border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:border-[#CE171F] focus:outline-none"
-                                        placeholder="Tối thiểu 6 ký tự"
+                                        placeholder="Tối thiểu 8 ký tự"
                                     >
                                 </div>
 
@@ -697,7 +697,7 @@
                                 <input 
                                     wire:model="password" 
                                     :type="showPassword ? 'text' : 'password'" 
-                                    placeholder="Tối thiểu 6 ký tự" 
+                                    placeholder="Tối thiểu 8 ký tự" 
                                     class="w-full pl-9 pr-8 py-2.5 bg-[#f8faf9] border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:bg-white focus:border-[#CE171F] focus:outline-none transition font-medium"
                                 >
                                 <button 

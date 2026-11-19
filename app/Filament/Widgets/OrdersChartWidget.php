@@ -39,7 +39,10 @@ class OrdersChartWidget extends ChartWidget
                 $date = Carbon::now()->subDays($i);
                 $labels[] = $date->format('d/m');
                 
-                $q = Order::whereDate('created_at', $date->toDateString())->where('status', '!=', 'cancelled');
+                $q = Order::whereDate('created_at', $date->toDateString())
+                    ->where(function ($sub) {
+                        $sub->where('status', 'completed')->orWhere('payment_status', 'paid');
+                    });
                 
                 $revenueData[] = (float) $q->sum('total_amount');
                 $orderCountData[] = $q->count();
@@ -56,7 +59,9 @@ class OrdersChartWidget extends ChartWidget
                 $labels[] = 'T' . $startOfWeek->format('W');
 
                 $q = Order::whereBetween('created_at', [$startOfWeek->toDateString() . ' 00:00:00', $endOfWeek->toDateString() . ' 23:59:59'])
-                    ->where('status', '!=', 'cancelled');
+                    ->where(function ($sub) {
+                        $sub->where('status', 'completed')->orWhere('payment_status', 'paid');
+                    });
 
                 $revenueData[] = (float) $q->sum('total_amount');
                 $orderCountData[] = $q->count();
@@ -73,7 +78,9 @@ class OrdersChartWidget extends ChartWidget
                 
                 $q = Order::whereYear('created_at', $month->year)
                     ->whereMonth('created_at', $month->month)
-                    ->where('status', '!=', 'cancelled');
+                    ->where(function ($sub) {
+                        $sub->where('status', 'completed')->orWhere('payment_status', 'paid');
+                    });
 
                 $revenueData[] = (float) $q->sum('total_amount'); 
                 $orderCountData[] = $q->count();
@@ -90,7 +97,9 @@ class OrdersChartWidget extends ChartWidget
                 $labels[] = $year->format('Y');
 
                 $q = Order::whereYear('created_at', $year->year)
-                    ->where('status', '!=', 'cancelled');
+                    ->where(function ($sub) {
+                        $sub->where('status', 'completed')->orWhere('payment_status', 'paid');
+                    });
 
                 $revenueData[] = (float) $q->sum('total_amount');
                 $orderCountData[] = $q->count();

@@ -1,45 +1,8 @@
-<?php
+﻿<?php
 
 use App\Http\Middleware\CheckSiteStatus;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
-
-// Local Environment Only Dev Routes
-if (app()->isLocal()) {
-    Route::middleware([CheckSiteStatus::class])->group(function () {
-        Route::livewire('/dev/ui-standards', 'pages::ui-standards')->name('dev.ui-standards');
-        Route::livewire('/dev/components', 'pages::components')->name('dev.components');
-        Route::livewire('/dev/ai-tasks', 'pages::ai-tasks')->name('dev.ai-tasks');
-        Route::livewire('/dev/project-config', 'pages::project-config')->name('dev.project-config');
-
-        Route::get('/dev/quick-admin-login', function () {
-            $admin = User::where('is_active', true)->first() ?? User::first();
-            if ($admin) {
-                auth()->login($admin, true);
-            }
-
-            return redirect('/hg-admin');
-        })->name('dev.quick-admin-login');
-
-        Route::get('/dev/task-image/{filename}', function ($filename) {
-            $filename = basename($filename);
-            $possiblePaths = [
-                storage_path("app/private/ai_tasks_images/{$filename}"),
-                storage_path("app/private/private/ai_tasks_images/{$filename}"),
-                storage_path("app/ai_tasks_images/{$filename}"),
-                storage_path("app/public/ai_tasks_images/{$filename}"),
-            ];
-
-            foreach ($possiblePaths as $path) {
-                if (file_exists($path)) {
-                    return response()->file($path);
-                }
-            }
-
-            abort(404);
-        })->name('dev.task-image');
-    });
-}
 
 Route::middleware([CheckSiteStatus::class])->group(function () {
     Route::livewire('/', 'pages::home')->name('home');

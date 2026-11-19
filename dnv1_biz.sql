@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Nov 18, 2026 at 03:39 AM
+-- Generation Time: Nov 18, 2026 at 04:02 AM
 -- Server version: 8.4.3
 -- PHP Version: 8.3.30
 
@@ -2215,7 +2215,7 @@ CREATE TABLE `coupons` (
 --
 
 INSERT INTO `coupons` (`id`, `code`, `title`, `badge`, `icon`, `color`, `description`, `image_url`, `type`, `value`, `min_order_amount`, `max_discount`, `usage_limit`, `used_count`, `valid_from`, `valid_until`, `is_active`, `sort_order`, `created_at`, `updated_at`) VALUES
-(1, 'FREESHIP', 'Freeship Toàn Quốc', 'MÃ VẬN CHUYỂN', 'fa-solid fa-truck-fast', 'emerald', 'Miễn phí giao hàng tiêu chuẩn cho đơn từ 300.000đ', '6478b4c0-a897-46db-b8f4-70e9fa1222cc', 'free_shipping', 0.00, 300000.00, 25000.00, 1000, 0, NULL, '2027-11-14 09:11:57', 1, 1, '2026-10-01 02:42:33', '2026-11-18 11:00:00'),
+(1, 'FREESHIP', 'Freeship Toàn Quốc', 'MÃ VẬN CHUYỂN', 'fa-solid fa-truck-fast', 'emerald', 'Miễn phí giao hàng tiêu chuẩn cho đơn từ 300.000đ', '6478b4c0-a897-46db-b8f4-70e9fa1222cc', 'free_shipping', 0.00, 300000.00, 25000.00, 1000, 0, NULL, '2027-11-14 09:11:57', 1, 1, '2026-10-01 02:42:33', '2026-11-18 04:02:14'),
 (2, 'GIAM50K', 'Giảm 50K Tri Ân', 'MÃ VẬN CHUYỂN', 'fa-solid fa-truck-fast', 'dark-green', 'Giảm ngay 50.000đ cho đơn hàng từ 500.000đ', '495b819c-20b2-4449-836b-8ef7c60926ae', 'fixed', 50000.00, 500000.00, 50000.00, 500, 0, NULL, '2027-11-14 09:11:57', 1, 2, '2026-10-01 02:42:33', '2026-11-14 09:11:57'),
 (3, 'GIAM20K', 'Giảm 20K Đơn Hàng', 'QUÀ TẶNG ĐẶC BIỆT', 'fa-solid fa-gift', 'amber', 'Giảm ngay 20.000đ cho đơn hàng từ 250.000đ', '107fbcf7-862e-4d2c-9934-4f54cf04f5bb', 'fixed', 20000.00, 250000.00, 20000.00, 500, 0, NULL, '2027-11-14 09:11:57', 1, 3, '2026-10-01 02:42:33', '2026-11-14 09:11:57'),
 (4, 'GIAM10K', 'Giảm 10K Đơn Đầu Tiên', 'GIẢM TRỰC TIẾP', 'fa-solid fa-percent', 'blue', 'Giảm ngay 10.000đ cho đơn hàng từ 150.000đ', 'ac6bd219-4a1c-49f7-a259-bf26fae9703d', 'fixed', 10000.00, 150000.00, 10000.00, 500, 0, NULL, '2027-11-14 09:11:57', 1, 4, '2026-10-01 02:42:34', '2026-11-14 09:11:57'),
@@ -2619,7 +2619,7 @@ INSERT INTO `daily_visits` (`id`, `visit_date`, `page_views`, `unique_visitors`,
 (34, '2026-11-15', 599, 140, '2026-11-14 17:06:05', '2026-11-15 16:53:03'),
 (35, '2026-11-16', 245, 99, '2026-11-15 17:08:01', '2026-11-16 16:56:14'),
 (36, '2026-11-17', 462, 150, '2026-11-16 17:08:05', '2026-11-17 16:56:23'),
-(37, '2026-11-18', 152, 30, '2026-11-17 17:07:00', '2026-11-18 03:39:32');
+(37, '2026-11-18', 167, 30, '2026-11-17 17:07:00', '2026-11-18 04:02:18');
 
 -- --------------------------------------------------------
 
@@ -2813,9 +2813,7 @@ CREATE TABLE `orders` (
 INSERT INTO `orders` (`id`, `user_id`, `order_number`, `status`, `sub_total`, `discount_amount`, `coupon_id`, `shipping_fee`, `total_amount`, `customer_name`, `customer_phone`, `customer_email`, `shipping_address`, `order_notes`, `delivery_method`, `payment_method`, `payment_status`, `sort_order`, `created_at`, `updated_at`) VALUES
 (4, 1, 'DNV-006066', 'pending', 19000.00, 0.00, NULL, 25000.00, 44000.00, 'hgdigital.vn@gmail.com', '0999999999', 'hgdigital.vn@gmail.com', '123, Xã Phước Thể, Huyện Tuy Phong, Bình Thuận', '123', 'standard', 'cod', 'unpaid', 0, '2026-10-01 02:04:27', '2026-11-11 11:26:12'),
 (7, 7, 'DNV-007911', 'cancelled', 213000.00, 0.00, NULL, 25000.00, 238000.00, 'Nguyễn Phúc Hậu', '0123456789', '', 'abcxyz, Phường Bến Thành, Quận 1, Hồ Chí Minh', '', 'standard', 'cod', 'unpaid', 0, '2026-11-12 05:50:22', '2026-11-12 05:52:40'),
-(8, 7, 'DNV-004206', 'pending', 101000.00, 0.00, NULL, 25000.00, 126000.00, 'Nguyễn Phúc Hậu', '0123456789', '', 'abcxyz, Phường Bến Thành, Quận 1, Hồ Chí Minh', '', 'standard', 'cod', 'unpaid', 0, '2026-11-12 05:53:08', '2026-11-12 05:53:08'),
-(9, NULL, 'DNV-261118-DGZMI3', 'pending', 106000.00, 0.00, NULL, 25000.00, 131000.00, 'test', '0999999999', 'test@gmail.com', '123123, Phường Tân Hưng Thuận, Quận 12, Hồ Chí Minh', '', 'standard', 'cod', 'unpaid', 0, '2026-11-18 03:01:16', '2026-11-18 03:01:16'),
-(10, 1, 'DNV-261118-CTBEUQ', 'pending', 146000.00, 0.00, NULL, 25000.00, 171000.00, 'test', '0999999999', 'khangviet@gmail.com', '123, Phường 28, Quận Bình Thạnh, Hồ Chí Minh', '', 'standard', 'cod', 'unpaid', 0, '2026-11-18 03:39:29', '2026-11-18 03:39:29');
+(8, 7, 'DNV-004206', 'pending', 101000.00, 0.00, NULL, 25000.00, 126000.00, 'Nguyễn Phúc Hậu', '0123456789', '', 'abcxyz, Phường Bến Thành, Quận 1, Hồ Chí Minh', '', 'standard', 'cod', 'unpaid', 0, '2026-11-12 05:53:08', '2026-11-12 05:53:08');
 
 -- --------------------------------------------------------
 
@@ -2847,10 +2845,7 @@ INSERT INTO `order_items` (`id`, `order_id`, `product_id`, `product_variant_id`,
 (6, 7, 394, NULL, 'Mù tạt Wasabi OBA 10 tuýp / lốc', '/storage/san-pham/c8c44d20-5e80-4e82-8057-e9e9c12aa5cd_400-400.webp', 182000.00, 1, 182000.00, 0, '2026-11-12 05:50:22', '2026-11-12 05:50:22'),
 (7, 7, 376, NULL, 'Nui Thượng Hạng Ống Dài Nufami 400 gr', '/storage/san-pham/3fb2cf6c-3c5e-4abc-bb9a-189f9d913c85_267-400.webp', 31000.00, 1, 31000.00, 0, '2026-11-12 05:50:22', '2026-11-12 05:50:22'),
 (8, 8, 301, NULL, 'Việt Nhĩ nước chấm cá cơm than 800 ml QC15', '/storage/san-pham/2fe3633f-7df4-49b1-9f44-6b45e3bce57f_400-400.webp', 16000.00, 1, 16000.00, 0, '2026-11-12 05:53:08', '2026-11-12 05:53:08'),
-(9, 8, 402, NULL, 'Bơ đậu phộng - BV Food 340 gr  ', '/storage/san-pham/d10b998b-f544-4ed7-a902-21253b56ad06_400-400.webp', 85000.00, 1, 85000.00, 0, '2026-11-12 05:53:08', '2026-11-12 05:53:08'),
-(10, 9, 452, NULL, 'Kem dưỡng da BHAESAJ BODY WHITENING - 24 HOUR 150 ML (24h)', '/storage/san-pham/fbb0d98e-fb3c-4b83-b3f1-d96fa99482ea_400-364.webp', 80000.00, 1, 80000.00, 0, '2026-11-18 03:01:16', '2026-11-18 03:01:16'),
-(11, 9, 466, NULL, 'Bánh snack tôm chiên giòn vị hải sản Kelum 160 gr ', '/storage/san-pham/7f560fdd-d7d3-4d4f-b29d-ec1d2c6ef370_400-335.webp', 26000.00, 1, 26000.00, 0, '2026-11-18 03:01:16', '2026-11-18 03:01:16'),
-(12, 10, 355, NULL, 'Khô cá chỉ vàng DNV 100g', '/storage/san-pham/27d70bbf-42e9-4590-8c2a-59820b50a4a3_400-400.webp', 73000.00, 2, 146000.00, 0, '2026-11-18 03:39:29', '2026-11-18 03:39:29');
+(9, 8, 402, NULL, 'Bơ đậu phộng - BV Food 340 gr  ', '/storage/san-pham/d10b998b-f544-4ed7-a902-21253b56ad06_400-400.webp', 85000.00, 1, 85000.00, 0, '2026-11-12 05:53:08', '2026-11-12 05:53:08');
 
 -- --------------------------------------------------------
 
@@ -3305,7 +3300,7 @@ INSERT INTO `products` (`id`, `category_id`, `brand_id`, `name`, `slug`, `descri
 (463, NULL, NULL, 'Bánh snack bắp bang bang cà chua Kelum 180 gr', 'banh-snack-bap-bang-bang-ca-chua-kelum-180-gr', 'Bánh snack bắp bang bang cà chua Kelum 180 gr', '<p>Bánh snack bắp bang bang cà chua Kelum 180 gr</p>', 25000.00, 25000.00, 'B0157', 'Gói', '180 gr', '01a1e2a7-4302-71ea-94ca-704c7bbeaa74', NULL, NULL, NULL, 1, 0, 0, 2, 0, 10000, NULL, 0, NULL, NULL, NULL, '2026-11-16 04:40:03', '2026-11-17 13:56:49', NULL),
 (464, NULL, NULL, 'Bánh phồng tôm nguyên vị Kelum 30 gr', 'banh-phong-tom-nguyen-vi-kelum-30-gr', 'Bánh phồng tôm nguyên vị Kelum 30 gr', '<p>Bánh phồng tôm nguyên vị Kelum 30 gr</p>', 8000.00, 8000.00, 'B0158', 'Gói', '30 gr', '01a1e2a9-125c-72b0-8130-0f60b3f42511', NULL, NULL, NULL, 1, 0, 0, 3, 0, 10000, NULL, 0, NULL, NULL, NULL, '2026-11-16 04:41:54', '2026-11-18 02:42:23', NULL),
 (465, NULL, NULL, 'Bánh phồng tôm vị tiêu đen Kelum 30 gr', 'banh-phong-tom-vi-tieu-den-kelum-30-gr', 'Bánh phồng tôm vị tiêu đen Kelum 30 gr', '<p>Bánh phồng tôm vị tiêu đen Kelum 30 gr</p>', 8000.00, 8000.00, 'B0159', 'Gói', '30 gr', '01a1e2ab-6fd2-723d-b438-cf4fdfdc0df2', NULL, NULL, NULL, 1, 0, 0, 3, 0, 10000, NULL, 0, NULL, NULL, NULL, '2026-11-16 04:44:33', '2026-11-18 02:37:45', NULL),
-(466, NULL, NULL, 'Bánh snack tôm chiên giòn vị hải sản Kelum 160 gr ', 'banh-snack-tom-chien-gion-vi-hai-san-kelum-160-gr', 'Bánh snack tôm chiên giòn vị hải sản Kelum 160 gr ', '<p>Bánh snack tôm chiên giòn vị hải sản Kelum 160 gr</p>', 26000.00, 26000.00, 'B0160', 'Gói', '160 gr', '01a1e2ad-5c87-722a-b0dc-f1926c95635d', NULL, NULL, NULL, 1, 0, 0, 3, 1, 9999, NULL, 0, NULL, NULL, NULL, '2026-11-16 04:46:59', '2026-11-18 03:01:16', NULL),
+(466, NULL, NULL, 'Bánh snack tôm chiên giòn vị hải sản Kelum 160 gr ', 'banh-snack-tom-chien-gion-vi-hai-san-kelum-160-gr', 'Bánh snack tôm chiên giòn vị hải sản Kelum 160 gr ', '<p>Bánh snack tôm chiên giòn vị hải sản Kelum 160 gr</p>', 26000.00, 26000.00, 'B0160', 'Gói', '160 gr', '01a1e2ad-5c87-722a-b0dc-f1926c95635d', NULL, NULL, NULL, 1, 0, 0, 4, 1, 9999, NULL, 0, NULL, NULL, NULL, '2026-11-16 04:46:59', '2026-11-18 03:56:27', NULL),
 (467, NULL, NULL, 'Bánh snack tôm chiên giòn vị ngọt cay Kelum 160 gr', 'banh-snack-tom-chien-gion-vi-ngot-cay-kelum-160-gr', 'Bánh snack tôm chiên giòn vị ngọt cay Kelum 160 gr', '<p>Bánh snack tôm chiên giòn vị ngọt cay Kelum 160 gr</p>', 26000.00, 26000.00, 'B0161', 'Gói', '160 gr', '01a1e2af-2f55-710b-8ffa-72bc31e6ac98', NULL, NULL, NULL, 1, 0, 0, 4, 0, 10000, NULL, 0, NULL, NULL, NULL, '2026-11-16 04:48:34', '2026-11-18 02:25:03', NULL);
 INSERT INTO `products` (`id`, `category_id`, `brand_id`, `name`, `slug`, `description`, `content`, `base_price`, `sale_price`, `sku`, `unit`, `weight`, `image_url`, `badge`, `badge_color`, `discount_label`, `is_active`, `is_featured`, `is_flash_sale`, `view_count`, `sold_count`, `stock_quantity`, `stock_warning`, `sort_order`, `seo_title`, `seo_description`, `seo_keywords`, `created_at`, `updated_at`, `gallery`) VALUES
 (468, NULL, NULL, 'Bánh snack lốc xoáy vị bò Kelum 160 gr ', 'banh-snack-loc-xoay-vi-bo-kelum-160-gr', 'Bánh snack lốc xoáy vị bò Kelum 160 gr ', '<p>Bánh snack lốc xoáy vị bò Kelum 160 gr</p>', 26000.00, 26000.00, 'B0162', 'Gói', '160 gr', '01a1e2b0-9c90-7368-96fb-fca3f1740428', NULL, NULL, NULL, 1, 0, 0, 3, 0, 10000, NULL, 0, NULL, NULL, NULL, '2026-11-16 04:50:15', '2026-11-17 13:55:16', NULL),
@@ -4286,7 +4281,7 @@ ALTER TABLE `content_types`
 -- AUTO_INCREMENT for table `coupons`
 --
 ALTER TABLE `coupons`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT for table `daily_visits`

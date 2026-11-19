@@ -53,13 +53,14 @@
         <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-6">
             <article class="article-content space-y-6 text-sm sm:text-base text-slate-700 leading-relaxed text-justify 
                 [&_p]:mb-4 
+                [&_h1]:border-l-4 [&_h1]:border-[#CE171F] [&_h1]:pl-4 [&_h1]:py-1 [&_h1]:text-xl sm:[&_h1]:text-2xl [&_h1]:font-black [&_h1]:text-slate-900 [&_h1]:uppercase [&_h1]:tracking-wide [&_h1]:mb-6
                 [&_h2]:border-l-4 [&_h2]:border-[#CE171F] [&_h2]:pl-4 [&_h2]:py-1 [&_h2]:text-xl sm:[&_h2]:text-2xl [&_h2]:font-black [&_h2]:text-slate-900 [&_h2]:uppercase [&_h2]:tracking-wide [&_h2]:mb-6
                 [&_h3]:text-lg sm:[&_h3]:text-xl [&_h3]:font-black [&_h3]:text-slate-900 [&_h3]:mt-8 [&_h3]:mb-3 
                 [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-2xl [&_img]:mx-auto [&_img]:my-4 [&_img]:shadow-sm
                 [&_figure]:my-6 
                 [&_strong]:text-slate-900">
                 
-                <h2>{{ $storyTitle }}</h2>
+                <h1>{{ $storyTitle }}</h1>
 
                 @if ($storyLead)
                     <p class="text-base sm:text-lg font-semibold text-slate-800 leading-relaxed border-b border-slate-100 pb-3">

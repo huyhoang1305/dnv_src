@@ -16,7 +16,10 @@ class StatsOverviewWidget extends BaseWidget
 
     protected function getStats(): array
     {
-        $totalRevenue = Order::where('status', '!=', 'cancelled')->sum('total_amount');
+        $totalRevenue = Order::where(function ($q) {
+            $q->where('status', 'completed')
+              ->orWhere('payment_status', 'paid');
+        })->sum('total_amount');
 
         if ($totalRevenue >= 1000000000) {
             $formattedRevenue = rtrim(rtrim(number_format($totalRevenue / 1000000000, 2, ',', '.'), '0'), ',') . ' Tỷ';
@@ -28,7 +31,7 @@ class StatsOverviewWidget extends BaseWidget
 
         return [
             Stat::make('Tổng Doanh Thu', $formattedRevenue . ' ₫')
-                ->description('Doanh thu từ các đơn hàng')
+                ->description('Doanh thu từ đơn hàng thành công')
                 ->descriptionIcon('heroicon-m-arrow-trending-up')
                 ->color('success'),
                 
