@@ -130,7 +130,8 @@
                             <button 
                                 type="button"
                                 @click="open = !open; if (open) $nextTick(() => $refs.provinceSearchInput.focus())"
-                                class="w-full text-xs border border-slate-200 rounded-xl px-3.5 py-2.5 focus:border-[#CE171F] focus:outline-none bg-white cursor-pointer flex items-center justify-between text-left transition hover:border-slate-300"
+                                class="w-full text-xs rounded-xl px-3.5 py-2.5 cursor-pointer flex items-center justify-between text-left transition"
+                                :style="open ? 'border: 1px solid #CE171F; background-color: #ffffff; box-shadow: 0 0 0 3px rgba(206, 23, 31, 0.08);' : 'border: 1px solid #E2E8F0; background-color: #F8FAFC;'"
                             >
                                 <span class="truncate font-medium text-slate-800" x-text="selectedLabel"></span>
                                 <i class="fa-solid fa-chevron-down text-[10px] text-slate-400 transition-transform duration-150 shrink-0 ml-2" :class="open ? 'rotate-180 text-[#CE171F]' : ''"></i>
@@ -138,52 +139,56 @@
 
                             <div 
                                 x-show="open"
-                                x-transition.opacity.duration.150ms
-                                style="display: none;"
-                                class="absolute left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 overflow-hidden"
+                                x-transition.opacity.duration.120ms
+                                style="display: none; position: absolute; left: 0; right: 0; top: 100%; margin-top: 6px; z-index: 60; background-color: #ffffff; border: 1px solid #E2E8F0; border-radius: 14px; box-shadow: 0 14px 32px -4px rgba(15, 23, 42, 0.14), 0 4px 10px -2px rgba(15, 23, 42, 0.06); overflow: hidden;"
                             >
                                 <!-- Ô tìm kiếm Tỉnh / Thành phố -->
-                                <div class="p-2 border-b border-slate-100 bg-slate-50/70">
+                                <div style="padding: 8px; border-bottom: 1px solid #F1F5F9; background-color: #FFFFFF;">
                                     <div class="relative flex items-center">
-                                        <i class="fa-solid fa-magnifying-glass text-[11px] text-slate-400 absolute left-3 pointer-events-none"></i>
+                                        <i class="fa-solid fa-magnifying-glass text-[11px] text-slate-400" style="position: absolute; left: 11px; pointer-events: none;"></i>
                                         <input 
                                             x-ref="provinceSearchInput"
                                             x-model="search"
                                             @keydown.escape.stop="open = false"
                                             type="text" 
-                                            placeholder="Gõ tên Tỉnh / Thành phố để tìm..." 
-                                            class="w-full pl-8 pr-7 py-1.5 text-xs bg-white border border-slate-200 rounded-xl focus:border-[#CE171F] focus:outline-none text-slate-800"
+                                            placeholder="Tìm Tỉnh / Thành phố..." 
+                                            style="width: 100%; padding: 7px 28px 7px 30px; font-size: 12px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; color: #1E293B; outline: none;"
+                                            onfocus="this.style.borderColor='#CBD5E1'; this.style.backgroundColor='#FFFFFF';"
+                                            onblur="this.style.borderColor='#E2E8F0'; this.style.backgroundColor='#F8FAFC';"
                                         >
                                         <button 
                                             x-show="search.length > 0"
                                             @click="search = ''; $refs.provinceSearchInput.focus()"
                                             type="button"
-                                            class="absolute right-2.5 text-slate-400 hover:text-slate-600 text-xs cursor-pointer"
+                                            style="position: absolute; right: 9px;"
+                                            class="text-slate-400 hover:text-slate-600 text-xs cursor-pointer"
                                         >
                                             <i class="fa-solid fa-circle-xmark"></i>
                                         </button>
                                     </div>
                                 </div>
 
-                                <!-- Danh sách Tỉnh / Thành phố -->
-                                <ul class="max-h-60 overflow-y-auto divide-y divide-slate-50 py-1 text-xs">
+                                <!-- Danh sách Tỉnh / Thành phố (Có thanh cuộn gọn, không kẻ viền đen) -->
+                                <div style="max-height: 215px; overflow-y: auto; padding: 5px;">
                                     <template x-for="item in filteredItems" :key="item.id">
-                                        <li>
-                                            <button 
-                                                type="button"
-                                                @click="selectItem(item)"
-                                                class="w-full px-3.5 py-2 text-left flex items-center justify-between hover:bg-red-50/70 transition cursor-pointer"
-                                                :class="String(selectedId) === String(item.id) ? 'bg-red-50 text-[#CE171F] font-bold' : 'text-slate-700 font-normal'"
-                                            >
-                                                <span class="truncate" x-text="item.name"></span>
-                                                <i x-show="String(selectedId) === String(item.id)" class="fa-solid fa-check text-[10px] text-[#CE171F] shrink-0 ml-2"></i>
-                                            </button>
-                                        </li>
+                                        <button 
+                                            type="button"
+                                            @click="selectItem(item)"
+                                            class="w-full text-left flex items-center justify-between transition cursor-pointer"
+                                            style="padding: 8px 10px; border-radius: 9px; font-size: 12px; margin-bottom: 1px; border: none;"
+                                            :style="String(selectedId) === String(item.id) ? 'background-color: #FEF2F2; color: #CE171F; font-weight: 600;' : 'background-color: transparent; color: #334155; font-weight: 400;'"
+                                            onmouseover="if (!this.dataset.active) this.style.backgroundColor='#F1F5F9'"
+                                            onmouseout="if (!this.dataset.active) this.style.backgroundColor='transparent'"
+                                            :data-active="String(selectedId) === String(item.id) ? '1' : ''"
+                                        >
+                                            <span class="truncate" x-text="item.name"></span>
+                                            <i x-show="String(selectedId) === String(item.id)" class="fa-solid fa-check text-[10px] shrink-0 ml-2" style="color: #CE171F;"></i>
+                                        </button>
                                     </template>
-                                    <li x-show="filteredItems.length === 0" class="px-3.5 py-3 text-center text-slate-400 text-xs">
+                                    <div x-show="filteredItems.length === 0" style="padding: 14px 10px; text-align: center; color: #94A3B8; font-size: 12px;">
                                         Không tìm thấy Tỉnh / Thành phố phù hợp
-                                    </li>
-                                </ul>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -233,7 +238,8 @@
                             <button 
                                 type="button"
                                 @click="open = !open; if (open) $nextTick(() => $refs.wardSearchInput.focus())"
-                                class="w-full text-xs border border-slate-200 rounded-xl px-3.5 py-2.5 focus:border-[#CE171F] focus:outline-none bg-white cursor-pointer flex items-center justify-between text-left transition hover:border-slate-300"
+                                class="w-full text-xs rounded-xl px-3.5 py-2.5 cursor-pointer flex items-center justify-between text-left transition"
+                                :style="open ? 'border: 1px solid #CE171F; background-color: #ffffff; box-shadow: 0 0 0 3px rgba(206, 23, 31, 0.08);' : 'border: 1px solid #E2E8F0; background-color: #F8FAFC;'"
                             >
                                 <span class="truncate font-medium text-slate-800" x-text="selectedLabel"></span>
                                 <i class="fa-solid fa-chevron-down text-[10px] text-slate-400 transition-transform duration-150 shrink-0 ml-2" :class="open ? 'rotate-180 text-[#CE171F]' : ''"></i>
@@ -241,59 +247,66 @@
 
                             <div 
                                 x-show="open"
-                                x-transition.opacity.duration.150ms
-                                style="display: none;"
-                                class="absolute left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 overflow-hidden"
+                                x-transition.opacity.duration.120ms
+                                style="display: none; position: absolute; left: 0; right: 0; top: 100%; margin-top: 6px; z-index: 60; background-color: #ffffff; border: 1px solid #E2E8F0; border-radius: 14px; box-shadow: 0 14px 32px -4px rgba(15, 23, 42, 0.14), 0 4px 10px -2px rgba(15, 23, 42, 0.06); overflow: hidden;"
                             >
                                 <!-- Ô tìm kiếm Phường / Xã -->
-                                <div class="p-2 border-b border-slate-100 bg-slate-50/70">
+                                <div style="padding: 8px; border-bottom: 1px solid #F1F5F9; background-color: #FFFFFF;">
                                     <div class="relative flex items-center">
-                                        <i class="fa-solid fa-magnifying-glass text-[11px] text-slate-400 absolute left-3 pointer-events-none"></i>
+                                        <i class="fa-solid fa-magnifying-glass text-[11px] text-slate-400" style="position: absolute; left: 11px; pointer-events: none;"></i>
                                         <input 
                                             x-ref="wardSearchInput"
                                             x-model="search"
                                             @keydown.escape.stop="open = false"
                                             type="text" 
-                                            placeholder="Gõ tên Phường / Xã để tìm nhanh..." 
-                                            class="w-full pl-8 pr-7 py-1.5 text-xs bg-white border border-slate-200 rounded-xl focus:border-[#CE171F] focus:outline-none text-slate-800"
+                                            placeholder="Tìm Phường / Xã / Đặc khu..." 
+                                            style="width: 100%; padding: 7px 28px 7px 30px; font-size: 12px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; color: #1E293B; outline: none;"
+                                            onfocus="this.style.borderColor='#CBD5E1'; this.style.backgroundColor='#FFFFFF';"
+                                            onblur="this.style.borderColor='#E2E8F0'; this.style.backgroundColor='#F8FAFC';"
                                         >
                                         <button 
                                             x-show="search.length > 0"
                                             @click="search = ''; $refs.wardSearchInput.focus()"
                                             type="button"
-                                            class="absolute right-2.5 text-slate-400 hover:text-slate-600 text-xs cursor-pointer"
+                                            style="position: absolute; right: 9px;"
+                                            class="text-slate-400 hover:text-slate-600 text-xs cursor-pointer"
                                         >
                                             <i class="fa-solid fa-circle-xmark"></i>
                                         </button>
                                     </div>
                                 </div>
 
-                                <!-- Danh sách Phường / Xã -->
-                                <ul class="max-h-60 overflow-y-auto divide-y divide-slate-50 py-1 text-xs">
+                                <!-- Danh sách Phường / Xã (Có thanh cuộn gọn, không kẻ viền đen) -->
+                                <div style="max-height: 215px; overflow-y: auto; padding: 5px;">
                                     <template x-for="item in filteredItems" :key="item.code">
-                                        <li>
-                                            <button 
-                                                type="button"
-                                                @click="selectItem(item)"
-                                                class="w-full px-3.5 py-2 text-left flex items-center justify-between hover:bg-red-50/70 transition cursor-pointer"
-                                                :class="String(selectedCode) === String(item.code) ? 'bg-red-50 text-[#CE171F] font-bold' : 'text-slate-700 font-normal'"
-                                            >
-                                                <span class="truncate" x-text="item.name"></span>
-                                                <i x-show="String(selectedCode) === String(item.code)" class="fa-solid fa-check text-[10px] text-[#CE171F] shrink-0 ml-2"></i>
-                                            </button>
-                                        </li>
+                                        <button 
+                                            type="button"
+                                            @click="selectItem(item)"
+                                            class="w-full text-left flex items-center justify-between transition cursor-pointer"
+                                            style="padding: 8px 10px; border-radius: 9px; font-size: 12px; margin-bottom: 1px; border: none;"
+                                            :style="String(selectedCode) === String(item.code) ? 'background-color: #FEF2F2; color: #CE171F; font-weight: 600;' : 'background-color: transparent; color: #334155; font-weight: 400;'"
+                                            onmouseover="if (!this.dataset.active) this.style.backgroundColor='#F1F5F9'"
+                                            onmouseout="if (!this.dataset.active) this.style.backgroundColor='transparent'"
+                                            :data-active="String(selectedCode) === String(item.code) ? '1' : ''"
+                                        >
+                                            <span class="truncate" x-text="item.name"></span>
+                                            <i x-show="String(selectedCode) === String(item.code)" class="fa-solid fa-check text-[10px] shrink-0 ml-2" style="color: #CE171F;"></i>
+                                        </button>
                                     </template>
-                                    <li class="border-t border-slate-100">
+                                    <div style="border-top: 1px solid #F1F5F9; margin-top: 4px; padding-top: 4px;">
                                         <button 
                                             type="button"
                                             @click="selectCustom(search.trim())"
-                                            class="w-full px-3.5 py-2 text-left flex items-center justify-between hover:bg-amber-50 text-amber-700 font-semibold transition cursor-pointer"
+                                            class="w-full text-left flex items-center justify-between transition cursor-pointer"
+                                            style="padding: 8px 10px; border-radius: 9px; font-size: 12px; color: #D97706; font-weight: 600;"
+                                            onmouseover="this.style.backgroundColor='#FFFBEB'"
+                                            onmouseout="this.style.backgroundColor='transparent'"
                                         >
-                                            <span x-text="search.trim().length > 0 ? 'Sử dụng tên vừa nhập: &quot;' + search.trim() + '&quot;' : '-- Nhập Phường / Xã khác --'"></span>
+                                            <span class="truncate" x-text="search.trim().length > 0 ? 'Dùng tên vừa nhập: &quot;' + search.trim() + '&quot;' : '+ Nhập Phường / Xã khác'"></span>
                                             <i class="fa-solid fa-pen text-[10px] shrink-0 ml-2"></i>
                                         </button>
-                                    </li>
-                                </ul>
+                                    </div>
+                                </div>
                             </div>
 
                             @if ($ward_code === '__custom__')

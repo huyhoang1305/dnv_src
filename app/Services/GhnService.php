@@ -17,7 +17,7 @@ class GhnService
      */
     public function getProvinces(): array
     {
-        $cacheKey = 'ttp_api_v1_new_provinces';
+        $cacheKey = 'ttp_api_v1_new_provinces_v2';
         $cached = Cache::get($cacheKey);
         if (!empty($cached) && is_array($cached)) {
             return $cached;
@@ -34,19 +34,20 @@ class GhnService
             if ($response->successful() && $response->json('success') === true) {
                 $data = $response->json('data') ?? [];
                 if (!empty($data) && is_array($data)) {
+                    $sixCentralCities = ['79', '01', '48', '31', '92', '46'];
                     $provinces = [];
                     foreach ($data as $item) {
                         $code = (string) ($item['code'] ?? '');
                         $name = trim((string) ($item['name'] ?? ''));
-                        $type = trim((string) ($item['type'] ?? ''));
 
                         if ($code === '' || $name === '') {
                             continue;
                         }
 
-                        $fullName = ($type !== '' && !str_starts_with(mb_strtolower($name), mb_strtolower($type)))
-                            ? ($type . ' ' . $name)
-                            : $name;
+                        $cleanName = preg_replace('/^(Thành phố|Tỉnh|TP\.)\s+/iu', '', $name);
+                        $fullName = in_array($code, $sixCentralCities, true)
+                            ? ('TP. ' . $cleanName)
+                            : ('Tỉnh ' . $cleanName);
 
                         $provinces[] = [
                             'id' => $code,
