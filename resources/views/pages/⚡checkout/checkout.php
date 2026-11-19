@@ -26,18 +26,16 @@ new #[Layout('layouts.app')] class extends Component
     public $customer_phone = '';
     public $customer_email = '';
 
-    // GHN Location Data
+    // Địa chỉ hành chính 2 cấp mới sau sáp nhập (34 Tỉnh/Thành phố & Phường/Xã/Đặc khu)
     public $provinces = [];
-    public $districts = [];
     public $wards = [];
 
-    public $province_id = 202; // Default TP.HCM
-    public $district_id = 1442; // Default Quận 1
-    public $ward_code = '20102'; // Default Phường Bến Thành
+    public $province_id = 'hcm'; // Mặc định TP. Hồ Chí Minh
+    public $ward_code = 'hcm_1'; // Mặc định Phường Sài Gòn
+    public $custom_ward = '';
 
-    public $shipping_city = 'Hồ Chí Minh';
-    public $shipping_district = 'Quận 1';
-    public $shipping_ward = 'Phường Bến Thành';
+    public $shipping_city = 'TP. Hồ Chí Minh';
+    public $shipping_ward = 'Phường Sài Gòn';
     public $shipping_address = '';
     public $order_notes = '';
     public $delivery_method = 'standard';
@@ -67,11 +65,12 @@ new #[Layout('layouts.app')] class extends Component
             }
         }
 
-        // Initialize GHN Address Data
-        $ghn = new GhnService();
-        $this->provinces = $ghn->getProvinces();
-        $this->districts = $ghn->getDistricts($this->province_id);
-        $this->wards = $ghn->getWards($this->district_id);
+        // Khởi tạo danh sách 34 Tỉnh / Thành phố và Phường / Xã sau sáp nhập
+        $addressService = new GhnService();
+        $this->provinces = $addressService->getProvinces();
+        $this->wards = $addressService->getWardsByProvince($this->province_id);
+        $this->ward_code = $this->wards[0]['code'] ?? '';
+        $this->shipping_ward = $this->wards[0]['name'] ?? '';
 
         // Load available coupons
         $this->availableCoupons = Coupon::where('is_active', true)->orderBy('sort_order', 'asc')->get();
@@ -88,64 +87,48 @@ new #[Layout('layouts.app')] class extends Component
 
     public function updatedProvinceId($value)
     {
-        $this->province_id = (int) $value;
-        $this->district_id = null;
-        $this->ward_code = null;
-        $this->shipping_district = '';
+        $this->province_id = (string) $value;
+        $this->ward_code = '';
         $this->shipping_ward = '';
-        $this->districts = [];
+        $this->custom_ward = '';
         $this->wards = [];
 
         foreach ($this->provinces as $p) {
-            if ($p['id'] == $this->province_id) {
+            if ($p['id'] === $this->province_id) {
                 $this->shipping_city = $p['name'];
                 break;
             }
         }
 
-        if ($this->province_id > 0) {
-            $this->districts = (new GhnService())->getDistricts($this->province_id);
-            $this->district_id = null;
-            $this->shipping_district = '';
-            $this->wards = [];
-            $this->ward_code = null;
-            $this->shipping_ward = '';
+        if (!empty($this->province_id)) {
+            $this->wards = (new GhnService())->getWardsByProvince($this->province_id);
+            $this->ward_code = $this->wards[0]['code'] ?? '';
+            $this->shipping_ward = $this->wards[0]['name'] ?? '';
         } else {
             $this->shipping_city = '';
-        }
-    }
-
-    public function updatedDistrictId($value)
-    {
-        $this->district_id = (int) $value;
-        $this->ward_code = null;
-        $this->shipping_ward = '';
-        $this->wards = [];
-
-        foreach ($this->districts as $d) {
-            if ($d['id'] == $this->district_id) {
-                $this->shipping_district = $d['name'];
-                break;
-            }
-        }
-
-        if ($this->district_id > 0) {
-            $this->wards = (new GhnService())->getWards($this->district_id);
-            $this->ward_code = null;
-            $this->shipping_ward = '';
-        } else {
-            $this->shipping_district = '';
         }
     }
 
     public function updatedWardCode($value)
     {
         $this->ward_code = (string) $value;
+        if ($this->ward_code === '__custom__') {
+            $this->shipping_ward = trim($this->custom_ward);
+            return;
+        }
+
         foreach ($this->wards as $w) {
-            if ($w['code'] == $this->ward_code) {
+            if ($w['code'] === $this->ward_code) {
                 $this->shipping_ward = $w['name'];
                 break;
             }
+        }
+    }
+
+    public function updatedCustomWard($value)
+    {
+        if ($this->ward_code === '__custom__') {
+            $this->shipping_ward = trim((string) $value);
         }
     }
 
@@ -278,13 +261,12 @@ new #[Layout('layouts.app')] class extends Component
             return;
         }
 
-        if (empty(trim((string) $this->shipping_district))) {
-            $this->errorMessage = 'Vui lòng chọn hoặc nhập Quận / Huyện.';
-            return;
+        if ($this->ward_code === '__custom__') {
+            $this->shipping_ward = trim((string) $this->custom_ward);
         }
 
         if (empty(trim((string) $this->shipping_ward))) {
-            $this->errorMessage = 'Vui lòng chọn hoặc nhập Phường / Xã.';
+            $this->errorMessage = 'Vui lòng chọn hoặc nhập Phường / Xã / Đặc khu.';
             return;
         }
 
@@ -312,7 +294,7 @@ new #[Layout('layouts.app')] class extends Component
 
         $this->payment_method = 'cod';
         $orderNumber = Order::generateOrderNumber();
-        $fullAddress = trim($this->shipping_address) . ', ' . $this->shipping_ward . ', ' . $this->shipping_district . ', ' . $this->shipping_city;
+        $fullAddress = trim($this->shipping_address) . ', ' . trim($this->shipping_ward) . ', ' . trim($this->shipping_city);
 
         $orderData = [
             'order_number' => $orderNumber,

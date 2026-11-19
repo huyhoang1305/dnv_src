@@ -316,19 +316,8 @@ class CartService
             return 0.0;
         }
 
-        $setting = Setting::getSystemSetting();
-        $defaultShippingFee = (float) ($setting?->general_settings['shipping']['default_fee'] ?? 25000);
-        $adminThreshold = (float) ($setting?->interface_settings['cart']['freeship_threshold'] ?? 0);
-        $freeShippingThreshold = $adminThreshold > 0 
-            ? $adminThreshold 
-            : (float) ($setting?->general_settings['shipping']['free_shipping_threshold'] 
-                ?? ($setting?->general_settings['shipping']['free_threshold'] ?? 500000));
-
-        if ($subtotal >= $freeShippingThreshold) {
-            return 0.0;
-        }
-
-        $shippingFee = $defaultShippingFee;
+        // Phí vận chuyển mặc định set cứng 25.000đ (25k)
+        $shippingFee = 25000.0;
 
         if (!empty($voucherCode)) {
             $coupon = Coupon::where('code', strtoupper(trim((string) $voucherCode)))->first();

@@ -102,19 +102,25 @@ class CartAndCheckoutTest extends TestCase
     }
 
     /**
-     * Test hàm CartService::calculateShippingFee đồng bộ giữa màn hình và server (Feedback Row 2)
+     * Test hàm CartService::calculateShippingFee set cứng 25k và địa chỉ 2 cấp sau sáp nhập (34 tỉnh thành)
      */
     public function test_cart_service_shipping_calculation(): void
     {
         // Khi subtotal = 0
         $this->assertEquals(0.0, CartService::calculateShippingFee(0));
 
-        // Khi subtotal >= 500k -> 0đ
-        $this->assertEquals(0.0, CartService::calculateShippingFee(600000));
+        // Phí vận chuyển mặc định set cứng 25.000đ cho mọi đơn không áp mã freeship
+        $this->assertEquals(25000.0, CartService::calculateShippingFee(220000));
+        $this->assertEquals(25000.0, CartService::calculateShippingFee(600000));
 
-        // Khi subtotal < 500k và không có mã -> 25k
-        $fee = CartService::calculateShippingFee(220000);
-        $this->assertEquals(25000.0, $fee);
+        // Kiểm tra danh sách 34 Tỉnh / Thành phố và Phường / Xã sau sáp nhập
+        $addressService = new \App\Services\GhnService();
+        $provinces = $addressService->getProvinces();
+        $this->assertCount(34, $provinces);
+
+        $hcmWards = $addressService->getWardsByProvince('hcm');
+        $this->assertNotEmpty($hcmWards);
+        $this->assertEquals('Phường Sài Gòn', $hcmWards[0]['name']);
     }
 
     /**

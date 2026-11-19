@@ -2,328 +2,814 @@
 
 namespace App\Services;
 
-use App\Models\Setting;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
-
 class GhnService
 {
-    protected string $token;
-    protected int $shopId;
-    protected string $apiUrl;
-    protected int $fromDistrictId;
-    protected string $fromWardCode;
-    protected int $fromProvinceId;
-
-    public function __construct()
-    {
-        $setting = Setting::getSystemSetting();
-        $ghnSettings = $setting?->general_settings['ghn'] ?? [];
-
-        $this->token = !empty($ghnSettings['api_token'])
-            ? (string) $ghnSettings['api_token']
-            : (string) config('services.ghn.token', '');
-
-        $this->shopId = !empty($ghnSettings['shop_id'])
-            ? (int) $ghnSettings['shop_id']
-            : (int) config('services.ghn.shop_id', 0);
-
-        $apiUrl = !empty($ghnSettings['api_url'])
-            ? (string) $ghnSettings['api_url']
-            : (string) config('services.ghn.api_url', 'https://online-gateway.ghn.vn/shiip/public-api/');
-        $this->apiUrl = rtrim($apiUrl, '/') . '/';
-
-        $this->fromDistrictId = !empty($ghnSettings['from_district_id'])
-            ? (int) $ghnSettings['from_district_id']
-            : (int) config('services.ghn.from_district_id', 1454);
-
-        $this->fromWardCode = !empty($ghnSettings['from_ward_code'])
-            ? (string) $ghnSettings['from_ward_code']
-            : (string) config('services.ghn.from_ward_code', '21201');
-
-        $this->fromProvinceId = !empty($ghnSettings['from_province_id'])
-            ? (int) $ghnSettings['from_province_id']
-            : (int) config('services.ghn.from_province_id', 202);
-    }
-
     /**
-     * Default headers for GHN API requests
-     */
-    protected function getHeaders(): array
-    {
-        return [
-            'token' => $this->token,
-            'shop_id' => (string) $this->shopId,
-            'Content-Type' => 'application/json',
-        ];
-    }
-
-    /**
-     * Get list of provinces/cities in Vietnam from GHN
+     * Danh sách 34 Tỉnh / Thành phố mới sau sáp nhập (Nghị quyết 202/2025/QH15)
+     * Mô hình chính quyền địa phương 2 cấp: Tỉnh/Thành phố -> Phường/Xã/Đặc khu (Bỏ cấp Quận/Huyện)
      */
     public function getProvinces(): array
     {
-        $cacheKey = 'ghn_master_provinces';
-        $cached = Cache::get($cacheKey);
-        if (!empty($cached) && is_array($cached)) {
-            return $cached;
-        }
-
-        if (!empty($this->token)) {
-            try {
-                $response = Http::withHeaders($this->getHeaders())
-                    ->timeout(8)
-                    ->get($this->apiUrl . 'master-data/province');
-
-                if ($response->successful()) {
-                    $data = $response->json('data') ?? [];
-                    if (!empty($data)) {
-                        $provinces = [];
-                        foreach ($data as $item) {
-                            $provinces[] = [
-                                'id' => (int) $item['ProvinceID'],
-                                'name' => (string) $item['ProvinceName'],
-                            ];
-                        }
-
-                        // Sort: Put HCM (202), Hanoi (201), Da Nang (203) on top, rest alphabetical
-                        usort($provinces, function ($a, $b) {
-                            $priorityIds = [202 => 1, 201 => 2, 203 => 3];
-                            $pA = $priorityIds[$a['id']] ?? 999;
-                            $pB = $priorityIds[$b['id']] ?? 999;
-                            if ($pA !== $pB) {
-                                return $pA <=> $pB;
-                            }
-                            return strcmp($a['name'], $b['name']);
-                        });
-
-                        Cache::put($cacheKey, $provinces, now()->addDays(7));
-                        return $provinces;
-                    }
-                }
-            } catch (\Throwable $e) {
-                Log::warning('GHN API getProvinces failed: ' . $e->getMessage());
-            }
-        }
-
-        // Dự phòng danh sách các tỉnh/thành phố phổ biến khi API lỗi hoặc chưa cấu hình token
-        return $this->getFallbackProvinces();
-    }
-
-    /**
-     * Get list of districts for a given province ID
-     */
-    public function getDistricts(int $provinceId): array
-    {
-        if ($provinceId <= 0) {
-            return [];
-        }
-
-        $cacheKey = "ghn_master_districts_{$provinceId}";
-        $cached = Cache::get($cacheKey);
-        if (!empty($cached) && is_array($cached)) {
-            return $cached;
-        }
-
-        if (!empty($this->token)) {
-            try {
-                $response = Http::withHeaders($this->getHeaders())
-                    ->timeout(8)
-                    ->post($this->apiUrl . 'master-data/district', [
-                        'province_id' => $provinceId,
-                    ]);
-
-                if ($response->successful()) {
-                    $data = $response->json('data') ?? [];
-                    if (!empty($data)) {
-                        $districts = [];
-                        foreach ($data as $item) {
-                            $districts[] = [
-                                'id' => (int) $item['DistrictID'],
-                                'name' => (string) $item['DistrictName'],
-                            ];
-                        }
-
-                        usort($districts, fn($a, $b) => strcmp($a['name'], $b['name']));
-                        Cache::put($cacheKey, $districts, now()->addDays(7));
-                        return $districts;
-                    }
-                }
-            } catch (\Throwable $e) {
-                Log::warning("GHN API getDistricts failed for province {$provinceId}: " . $e->getMessage());
-            }
-        }
-
-        return $this->getFallbackDistricts($provinceId);
-    }
-
-    /**
-     * Get list of wards for a given district ID
-     */
-    public function getWards(int $districtId): array
-    {
-        if ($districtId <= 0) {
-            return [];
-        }
-
-        $cacheKey = "ghn_master_wards_{$districtId}";
-        $cached = Cache::get($cacheKey);
-        if (!empty($cached) && is_array($cached)) {
-            return $cached;
-        }
-
-        if (!empty($this->token)) {
-            try {
-                $response = Http::withHeaders($this->getHeaders())
-                    ->timeout(8)
-                    ->post($this->apiUrl . 'master-data/ward', [
-                        'district_id' => $districtId,
-                    ]);
-
-                if ($response->successful()) {
-                    $data = $response->json('data') ?? [];
-                    if (!empty($data)) {
-                        $wards = [];
-                        foreach ($data as $item) {
-                            $wards[] = [
-                                'code' => (string) $item['WardCode'],
-                                'name' => (string) $item['WardName'],
-                            ];
-                        }
-
-                        usort($wards, fn($a, $b) => strcmp($a['name'], $b['name']));
-                        Cache::put($cacheKey, $wards, now()->addDays(7));
-                        return $wards;
-                    }
-                }
-            } catch (\Throwable $e) {
-                Log::warning("GHN API getWards failed for district {$districtId}: " . $e->getMessage());
-            }
-        }
-
-        return $this->getFallbackWards($districtId);
-    }
-
-    /**
-     * Fallback danh sách tỉnh/thành phố phổ biến tại Việt Nam
-     */
-    protected function getFallbackProvinces(): array
-    {
         return [
-            ['id' => 202, 'name' => 'TP. Hồ Chí Minh'],
-            ['id' => 201, 'name' => 'Hà Nội'],
-            ['id' => 203, 'name' => 'Đà Nẵng'],
-            ['id' => 204, 'name' => 'Hải Phòng'],
-            ['id' => 205, 'name' => 'Cần Thơ'],
-            ['id' => 206, 'name' => 'Bình Dương'],
-            ['id' => 207, 'name' => 'Đồng Nai'],
-            ['id' => 208, 'name' => 'Bà Rịa - Vũng Tàu'],
-            ['id' => 209, 'name' => 'Long An'],
-            ['id' => 210, 'name' => 'Tiền Giang'],
-            ['id' => 211, 'name' => 'Lâm Đồng'],
-            ['id' => 212, 'name' => 'Khánh Hòa'],
-            ['id' => 213, 'name' => 'Bình Thuận'],
-            ['id' => 214, 'name' => 'Quảng Nam'],
-            ['id' => 215, 'name' => 'Thừa Thiên Huế'],
-            ['id' => 216, 'name' => 'Quảng Ninh'],
-            ['id' => 217, 'name' => 'Bắc Ninh'],
-            ['id' => 218, 'name' => 'Thanh Hóa'],
-            ['id' => 219, 'name' => 'Nghệ An'],
-            ['id' => 220, 'name' => 'Kiên Giang'],
+            ['id' => 'hcm', 'name' => 'TP. Hồ Chí Minh'],
+            ['id' => 'hn', 'name' => 'TP. Hà Nội'],
+            ['id' => 'dn', 'name' => 'TP. Đà Nẵng'],
+            ['id' => 'hp', 'name' => 'TP. Hải Phòng'],
+            ['id' => 'ct', 'name' => 'TP. Cần Thơ'],
+            ['id' => 'hue', 'name' => 'TP. Huế'],
+            ['id' => 'angiang', 'name' => 'Tỉnh An Giang'],
+            ['id' => 'bacninh', 'name' => 'Tỉnh Bắc Ninh'],
+            ['id' => 'camau', 'name' => 'Tỉnh Cà Mau'],
+            ['id' => 'caobang', 'name' => 'Tỉnh Cao Bằng'],
+            ['id' => 'daklak', 'name' => 'Tỉnh Đắk Lắk'],
+            ['id' => 'dienbien', 'name' => 'Tỉnh Điện Biên'],
+            ['id' => 'dongnai', 'name' => 'Tỉnh Đồng Nai'],
+            ['id' => 'dongthap', 'name' => 'Tỉnh Đồng Tháp'],
+            ['id' => 'gialai', 'name' => 'Tỉnh Gia Lai'],
+            ['id' => 'hatinh', 'name' => 'Tỉnh Hà Tĩnh'],
+            ['id' => 'hungyen', 'name' => 'Tỉnh Hưng Yên'],
+            ['id' => 'khanhhoa', 'name' => 'Tỉnh Khánh Hòa'],
+            ['id' => 'laichau', 'name' => 'Tỉnh Lai Châu'],
+            ['id' => 'lamdong', 'name' => 'Tỉnh Lâm Đồng'],
+            ['id' => 'langson', 'name' => 'Tỉnh Lạng Sơn'],
+            ['id' => 'laocai', 'name' => 'Tỉnh Lào Cai'],
+            ['id' => 'nghean', 'name' => 'Tỉnh Nghệ An'],
+            ['id' => 'ninhbinh', 'name' => 'Tỉnh Ninh Bình'],
+            ['id' => 'phutho', 'name' => 'Tỉnh Phú Thọ'],
+            ['id' => 'quangngai', 'name' => 'Tỉnh Quảng Ngãi'],
+            ['id' => 'quangninh', 'name' => 'Tỉnh Quảng Ninh'],
+            ['id' => 'quangtri', 'name' => 'Tỉnh Quảng Trị'],
+            ['id' => 'sonla', 'name' => 'Tỉnh Sơn La'],
+            ['id' => 'tayninh', 'name' => 'Tỉnh Tây Ninh'],
+            ['id' => 'thainguyen', 'name' => 'Tỉnh Thái Nguyên'],
+            ['id' => 'thanhhoa', 'name' => 'Tỉnh Thanh Hóa'],
+            ['id' => 'tuyenquang', 'name' => 'Tỉnh Tuyên Quang'],
+            ['id' => 'vinhlong', 'name' => 'Tỉnh Vĩnh Long'],
         ];
     }
 
     /**
-     * Fallback danh sách quận/huyện phổ biến khi GHN API offline
+     * Lấy danh sách Phường / Xã / Đặc khu trực tiếp theo Tỉnh / Thành phố (Mô hình 2 cấp sau sáp nhập)
      */
-    protected function getFallbackDistricts(int $provinceId): array
+    public function getWardsByProvince(string $provinceId): array
     {
-        // 202: TP. Hồ Chí Minh
-        if ($provinceId === 202) {
-            return [
-                ['id' => 1442, 'name' => 'Quận 1'],
-                ['id' => 1443, 'name' => 'Quận 3'],
-                ['id' => 1444, 'name' => 'Quận 4'],
-                ['id' => 1445, 'name' => 'Quận 5'],
-                ['id' => 1446, 'name' => 'Quận 6'],
-                ['id' => 1447, 'name' => 'Quận 7'],
-                ['id' => 1448, 'name' => 'Quận 8'],
-                ['id' => 1449, 'name' => 'Quận 10'],
-                ['id' => 1450, 'name' => 'Quận 11'],
-                ['id' => 1451, 'name' => 'Quận 12'],
-                ['id' => 1452, 'name' => 'Quận Bình Thạnh'],
-                ['id' => 1453, 'name' => 'Quận Gò Vấp'],
-                ['id' => 1454, 'name' => 'Quận Phú Nhuận'],
-                ['id' => 1455, 'name' => 'Quận Tân Bình'],
-                ['id' => 1456, 'name' => 'Quận Tân Phú'],
-                ['id' => 1457, 'name' => 'Quận Bình Tân'],
-                ['id' => 3695, 'name' => 'Thành Phố Thủ Đức'],
-                ['id' => 1533, 'name' => 'Huyện Bình Chánh'],
-                ['id' => 1534, 'name' => 'Huyện Nhà Bè'],
-                ['id' => 1535, 'name' => 'Huyện Hóc Môn'],
-                ['id' => 1536, 'name' => 'Huyện Củ Chi'],
-                ['id' => 2090, 'name' => 'Huyện Cần Giờ'],
+        $map = [
+            'hcm' => [
+                // Khu vực Trung tâm & Nội thành TP.HCM (Nghị quyết 1685/NQ-UBTVQH15)
+                'Phường Sài Gòn',
+                'Phường Bến Thành',
+                'Phường Tân Định',
+                'Phường Cầu Ông Lãnh',
+                'Phường Bàn Cờ',
+                'Phường Xuân Hòa',
+                'Phường Nhiêu Lộc',
+                'Phường Xóm Chiếu',
+                'Phường Khánh Hội',
+                'Phường Vĩnh Hội',
+                'Phường Chợ Quán',
+                'Phường An Đông',
+                'Phường Chợ Lớn',
+                'Phường Bình Tây',
+                'Phường Bình Tiên',
+                'Phường Bình Phú',
+                'Phường Phú Lâm',
+                'Phường Tân Thuận',
+                'Phường Phú Thuận',
+                'Phường Tân Mỹ',
+                'Phường Tân Hưng',
+                'Phường Chánh Hưng',
+                'Phường Phú Định',
+                'Phường Bình Đông',
+                'Phường Diên Hồng',
+                'Phường Vườn Lài',
+                'Phường Hòa Hưng',
+                'Phường Minh Phụng',
+                'Phường Bình Thới',
+                'Phường Hòa Bình',
+                'Phường Phú Thọ',
+                'Phường Đông Hưng Thuận',
+                'Phường Trung Mỹ Tây',
+                'Phường Tân Thới Hiệp',
+                'Phường Thới An',
+                'Phường An Phú Đông',
+                'Phường Gia Định',
+                'Phường Bình Hòa',
+                'Phường Thạnh Mỹ Tây',
+                'Phường Bình Lợi Trung',
+                'Phường Bình Quới',
+                'Phường Đức Nhuận',
+                'Phường Cầu Kiệu',
+                'Phường Phú Nhuận',
+                'Phường Tân Sơn Hòa',
+                'Phường Tân Sơn Nhất',
+                'Phường Tân Hòa',
+                'Phường Bảy Hiền',
+                'Phường Tân Bình',
+                'Phường Tân Sơn',
+                'Phường Tân Sơn Nhì',
+                'Phường Tây Thạnh',
+                'Phường Tân Quý',
+                'Phường Phú Thọ Hòa',
+                'Phường Phú Thạnh',
+                'Phường Tân Phú',
+                'Phường Hạnh Thông',
+                'Phường An Nhơn',
+                'Phường Gò Vấp',
+                'Phường Thông Tây Hội',
+                'Phường An Hội Tây',
+                'Phường An Hội Đông',
+                'Phường An Lạc',
+                'Phường Bình Tân',
+                'Phường Tân Tạo',
+                'Phường Bình Trị Đông',
+                'Phường Bình Hưng Hòa',
+                'Phường Thủ Đức',
+                'Phường Hiệp Bình',
+                'Phường Tam Bình',
+                'Phường Linh Xuân',
+                'Phường Tăng Nhơn Phú',
+                'Phường Phước Long',
+                'Phường Long Bình',
+                'Phường Long Phước',
+                'Phường Long Trường',
+                'Phường Cát Lái',
+                'Phường An Khánh',
+                'Phường Bình Trưng',
+                // Khu vực Bình Dương sáp nhập vào TP.HCM
+                'Phường Thủ Dầu Một',
+                'Phường Phú Lợi',
+                'Phường Chánh Hiệp',
+                'Phường Bình Dương',
+                'Phường Hòa Lợi',
+                'Phường Thuận An',
+                'Phường Thuận Giao',
+                'Phường An Phú',
+                'Phường Lái Thiêu',
+                'Phường Dĩ An',
+                'Phường Đông Hòa',
+                'Phường Tân Đông Hiệp',
+                'Phường Tân Uyên',
+                'Phường Uyên Hưng',
+                'Phường Bến Cát',
+                'Phường Mỹ Phước',
+                'Phường Thới Hòa',
+                // Khu vực Bà Rịa - Vũng Tàu sáp nhập vào TP.HCM
+                'Phường Vũng Tàu',
+                'Phường Tam Thắng',
+                'Phường Rạch Dừa',
+                'Phường Phước Thắng',
+                'Phường Bà Rịa',
+                'Phường Long Hương',
+                'Phường Phú Mỹ',
+                'Phường Tân Phước',
+                'Phường Tân Hải',
+                // Các Xã & Đặc khu thuộc TP.HCM mới
+                'Xã Vĩnh Lộc',
+                'Xã Tân Vĩnh Lộc',
+                'Xã Bình Lợi',
+                'Xã Tân Nhựt',
+                'Xã Bình Chánh',
+                'Xã Hưng Long',
+                'Xã Bình Hưng',
+                'Xã Nhà Bè',
+                'Xã Hiệp Phước',
+                'Xã Hóc Môn',
+                'Xã Bà Điểm',
+                'Xã Xuân Thới Sơn',
+                'Xã Đông Thạnh',
+                'Xã Củ Chi',
+                'Xã Tân An Hội',
+                'Xã Phú Hòa Đông',
+                'Xã An Nhơn Tây',
+                'Xã Bình Mỹ',
+                'Xã Cần Giờ',
+                'Xã Bình Khánh',
+                'Xã Thạnh An',
+                'Xã Bàu Bàng',
+                'Xã Dầu Tiếng',
+                'Xã Phú Giáo',
+                'Xã Bắc Tân Uyên',
+                'Xã Long Sơn',
+                'Xã Long Điền',
+                'Xã Đất Đỏ',
+                'Xã Châu Đức',
+                'Xã Xuyên Mộc',
+                'Xã Hồ Tràm',
+                'Xã Bình Châu',
+                'Đặc khu Côn Đảo',
+            ],
+            'hn' => [
+                'Phường Hoàn Kiếm',
+                'Phường Cửa Nam',
+                'Phường Ba Đình',
+                'Phường Ngọc Hà',
+                'Phường Giảng Võ',
+                'Phường Hai Bà Trưng',
+                'Phường Bạch Mai',
+                'Phường Vĩnh Tuy',
+                'Phường Đống Đa',
+                'Phường Kim Liên',
+                'Phường Văn Miếu - Quốc Tử Giám',
+                'Phường Láng',
+                'Phường Ô Chợ Dừa',
+                'Phường Tây Hồ',
+                'Phường Phú Thượng',
+                'Phường Hồng Hà',
+                'Phường Cầu Giấy',
+                'Phường Dịch Vọng',
+                'Phường Nghĩa Đô',
+                'Phường Yên Hòa',
+                'Phường Thanh Xuân',
+                'Phường Khương Đình',
+                'Phường Phương Liệt',
+                'Phường Hoàng Mai',
+                'Phường Định Công',
+                'Phường Hoàng Liệt',
+                'Phường Lĩnh Nam',
+                'Phường Tương Mai',
+                'Phường Vĩnh Hưng',
+                'Phường Yên Sở',
+                'Phường Long Biên',
+                'Phường Bồ Đề',
+                'Phường Gia Thụy',
+                'Phường Ngọc Thụy',
+                'Phường Việt Hưng',
+                'Phường Phúc Lợi',
+                'Phường Từ Liêm',
+                'Phường Tây Tựu',
+                'Phường Phú Diễn',
+                'Phường Xuân Đỉnh',
+                'Phường Đông Ngạc',
+                'Phường Thượng Cát',
+                'Phường Đại Mỗ',
+                'Phường Tây Mỗ',
+                'Phường Xuân Phương',
+                'Phường Hà Đông',
+                'Phường Dương Nội',
+                'Phường Kiến Hưng',
+                'Phường Phú Lương',
+                'Phường Yên Nghĩa',
+                'Phường Sơn Tây',
+                'Xã Đông Anh',
+                'Xã Gia Lâm',
+                'Xã Thanh Trì',
+                'Xã Hoài Đức',
+                'Xã Đan Phượng',
+                'Xã Thanh Oai',
+                'Xã Thường Tín',
+                'Xã Phú Xuyên',
+                'Xã Chương Mỹ',
+                'Xã Quốc Oai',
+                'Xã Thạch Thất',
+                'Xã Phúc Thọ',
+                'Xã Ba Vì',
+                'Xã Mỹ Đức',
+                'Xã Ứng Hòa',
+                'Xã Sóc Sơn',
+                'Xã Mê Linh',
+            ],
+            'dn' => [
+                'Phường Hải Châu',
+                'Phường Hòa Cường',
+                'Phường Thanh Khê',
+                'Phường An Khê',
+                'Phường Sơn Trà',
+                'Phường An Hải',
+                'Phường Ngũ Hành Sơn',
+                'Phường Liên Chiểu',
+                'Phường Hòa Khánh',
+                'Phường Cẩm Lệ',
+                'Phường Hòa Xuân',
+                'Phường Tam Kỳ',
+                'Phường Hương Trà (Tam Kỳ)',
+                'Phường Hội An',
+                'Phường Điện Bàn',
+                'Xã Hòa Vang',
+                'Xã Núi Thành',
+                'Xã Thăng Bình',
+                'Xã Duy Xuyên',
+                'Xã Đại Lộc',
+                'Xã Quế Sơn',
+                'Đặc khu Hoàng Sa',
+            ],
+            'hp' => [
+                'Phường Hồng Bàng',
+                'Phường Ngô Quyền',
+                'Phường Lê Chân',
+                'Phường Hải An',
+                'Phường Kiến An',
+                'Phường Đồ Sơn',
+                'Phường Dương Kinh',
+                'Phường Thủy Nguyên',
+                'Phường An Dương',
+                'Phường Hải Dương',
+                'Phường Thành Đông',
+                'Phường Chí Linh',
+                'Phường Kinh Môn',
+                'Xã An Lão',
+                'Xã Kiến Thụy',
+                'Xã Tiên Lãng',
+                'Xã Vĩnh Bảo',
+                'Xã Cẩm Giàng',
+                'Xã Nam Sách',
+                'Đặc khu Cát Hải',
+                'Đặc khu Bạch Long Vĩ',
+            ],
+            'ct' => [
+                'Phường Ninh Kiều',
+                'Phường Cái Khế',
+                'Phường Tân An',
+                'Phường Bình Thủy',
+                'Phường Cái Răng',
+                'Phường Ô Môn',
+                'Phường Thốt Nốt',
+                'Phường Vị Thanh',
+                'Phường Ngã Bảy',
+                'Phường Long Mỹ',
+                'Phường Sóc Trăng',
+                'Phường Phú Lợi (Sóc Trăng)',
+                'Phường Vĩnh Châu',
+                'Phường Ngã Năm',
+                'Xã Phong Điền',
+                'Xã Thới Lai',
+                'Xã Cờ Đỏ',
+                'Xã Vĩnh Thạnh',
+                'Xã Kế Sách',
+                'Xã Trần Đề',
+            ],
+            'hue' => [
+                'Phường Thuận Hóa',
+                'Phường Phú Xuân',
+                'Phường Vỹ Dạ',
+                'Phường An Cựu',
+                'Phường Thủy Xuân',
+                'Phường Kim Long',
+                'Phường Hương Thủy',
+                'Phường Hương Trà',
+                'Phường Phong Điền',
+                'Xã Phú Vang',
+                'Xã Quảng Điền',
+                'Xã Phú Lộc',
+                'Xã A Lưới',
+            ],
+            'angiang' => [
+                'Phường Long Xuyên',
+                'Phường Mỹ Thới',
+                'Phường Châu Đốc',
+                'Phường Tân Châu',
+                'Phường Rạch Giá',
+                'Phường Vĩnh Thông',
+                'Phường Hà Tiên',
+                'Xã Chợ Mới',
+                'Xã Phú Tân',
+                'Xã Thoại Sơn',
+                'Xã Tri Tôn',
+                'Xã Hòn Đất',
+                'Xã Giồng Riềng',
+                'Đặc khu Phú Quốc',
+                'Đặc khu Kiên Hải',
+                'Đặc khu Thổ Châu',
+            ],
+            'bacninh' => [
+                'Phường Kinh Bắc',
+                'Phường Vũ Ninh',
+                'Phường Từ Sơn',
+                'Phường Thuận Thành',
+                'Phường Quế Võ',
+                'Phường Bắc Giang',
+                'Phường Việt Yên',
+                'Phường Chũ',
+                'Xã Tiên Du',
+                'Xã Yên Phong',
+                'Xã Gia Bình',
+                'Xã Lương Tài',
+                'Xã Hiệp Hòa',
+                'Xã Lạng Giang',
+                'Xã Lục Nam',
+            ],
+            'camau' => [
+                'Phường Tân Thành',
+                'Phường An Xuyên',
+                'Phường Lý Văn Lâm',
+                'Phường Bạc Liêu',
+                'Phường Giá Rai',
+                'Xã Năm Căn',
+                'Xã Cái Nước',
+                'Xã Đầm Dơi',
+                'Xã Trần Văn Thời',
+                'Xã U Minh',
+                'Xã Ngọc Hiển',
+                'Xã Vĩnh Lợi',
+                'Xã Hòa Bình',
+            ],
+            'caobang' => [
+                'Phường Thục Phán',
+                'Phường Nùng Trí Cao',
+                'Phường Tân Giang',
+                'Xã Hòa An',
+                'Xã Quảng Hòa',
+                'Xã Trùng Khánh',
+                'Xã Bảo Lạc',
+                'Xã Nguyên Bình',
+            ],
+            'daklak' => [
+                'Phường Buôn Ma Thuột',
+                'Phường Tân An',
+                'Phường Tân Lập',
+                'Phường Buôn Hồ',
+                'Phường Tuy Hòa',
+                'Phường Phú Yên',
+                'Phường Đông Hòa',
+                'Phường Sông Cầu',
+                'Xã Ea Kar',
+                'Xã Krông Pắc',
+                'Xã Cư M\'gar',
+                'Xã Tuy An',
+                'Xã Tây Hòa',
+            ],
+            'dienbien' => [
+                'Phường Điện Biên Phủ',
+                'Phường Mường Thanh',
+                'Phường Mường Lay',
+                'Xã Điện Biên',
+                'Xã Tuần Giáo',
+                'Xã Mường Ảng',
+                'Xã Tủa Chùa',
+                'Xã Mường Nhé',
+            ],
+            'dongnai' => [
+                'Phường Biên Hòa',
+                'Phường Trấn Biên',
+                'Phường Long Bình',
+                'Phường Tam Hiệp',
+                'Phường Hố Nai',
+                'Phường Long Khánh',
+                'Phường Đồng Xoài',
+                'Phường Bình Long',
+                'Phường Phước Long',
+                'Phường Chơn Thành',
+                'Xã Long Thành',
+                'Xã Nhơn Trạch',
+                'Xã Trảng Bom',
+                'Xã Vĩnh Cửu',
+                'Xã Thống Nhất',
+                'Xã Xuân Lộc',
+                'Xã Định Quán',
+                'Xã Tân Phú',
+                'Xã Đồng Phú',
+                'Xã Bù Đăng',
+                'Xã Lộc Ninh',
+            ],
+            'dongthap' => [
+                'Phường Cao Lãnh',
+                'Phường Mỹ Ngãi',
+                'Phường Sa Đéc',
+                'Phường Hồng Ngự',
+                'Phường Mỹ Tho',
+                'Phường Đạo Thạnh',
+                'Phường Gò Công',
+                'Phường Cai Lậy',
+                'Xã Lấp Vò',
+                'Xã Lai Vung',
+                'Xã Châu Thành',
+                'Xã Tháp Mười',
+                'Xã Thanh Bình',
+                'Xã Cái Bè',
+                'Xã Chợ Gạo',
+            ],
+            'gialai' => [
+                'Phường Pleiku',
+                'Phường Hội Phú',
+                'Phường Diên Hồng (Pleiku)',
+                'Phường An Khê',
+                'Phường Ayun Pa',
+                'Phường Quy Nhơn',
+                'Phường Quy Nhơn Nam',
+                'Phường Quy Nhơn Bắc',
+                'Phường An Nhơn',
+                'Phường Hoài Nhơn',
+                'Xã Chư Sê',
+                'Xã Đak Đoa',
+                'Xã Tuy Phước',
+                'Xã Tây Sơn',
+                'Xã Phù Cát',
+            ],
+            'hatinh' => [
+                'Phường Thành Sen',
+                'Phường Hà Huy Tập',
+                'Phường Trần Phú',
+                'Phường Hồng Lĩnh',
+                'Phường Kỳ Anh',
+                'Xã Nghi Xuân',
+                'Xã Can Lộc',
+                'Xã Thạch Hà',
+                'Xã Cẩm Xuyên',
+                'Xã Hương Khê',
+                'Xã Hương Sơn',
+            ],
+            'hungyen' => [
+                'Phường Phố Hiến',
+                'Phường Lam Sơn',
+                'Phường Mỹ Hào',
+                'Phường Thái Bình',
+                'Phường Trà Lý',
+                'Xã Văn Giang',
+                'Xã Văn Lâm',
+                'Xã Yên Mỹ',
+                'Xã Khoái Châu',
+                'Xã Kim Động',
+                'Xã Đông Hưng',
+                'Xã Vũ Thư',
+                'Xã Kiến Xương',
+                'Xã Tiền Hải',
+                'Xã Thái Thụy',
+            ],
+            'khanhhoa' => [
+                'Phường Nha Trang',
+                'Phường Bắc Nha Trang',
+                'Phường Nam Nha Trang',
+                'Phường Tây Nha Trang',
+                'Phường Cam Ranh',
+                'Phường Cam Linh',
+                'Phường Ninh Hòa',
+                'Phường Phan Rang - Tháp Chàm',
+                'Phường Đông Hải',
+                'Xã Diên Khánh',
+                'Xã Cam Lâm',
+                'Xã Vạn Ninh',
+                'Xã Ninh Hải',
+                'Xã Ninh Phước',
+                'Đặc khu Trường Sa',
+            ],
+            'laichau' => [
+                'Phường Tân Phong',
+                'Phường Đoàn Kết',
+                'Xã Tam Đường',
+                'Xã Phong Thổ',
+                'Xã Than Uyên',
+                'Xã Tân Uyên',
+                'Xã Sìn Hồ',
+                'Xã Mường Tè',
+            ],
+            'lamdong' => [
+                'Phường Xuân Hương - Đà Lạt',
+                'Phường Lâm Viên - Đà Lạt',
+                'Phường Cam Ly - Đà Lạt',
+                'Phường Lang Biang - Đà Lạt',
+                'Phường Bảo Lộc',
+                'Phường B\'Lao',
+                'Phường Phan Thiết',
+                'Phường Phú Thủy',
+                'Phường Mũi Né',
+                'Phường La Gi',
+                'Phường Gia Nghĩa',
+                'Xã Đức Trọng',
+                'Xã Lâm Hà',
+                'Xã Di Linh',
+                'Xã Đơn Dương',
+                'Xã Tuy Phong',
+                'Xã Bắc Bình',
+                'Xã Hàm Thuận Nam',
+                'Xã Đắk Mil',
+                'Xã Cư Jút',
+                'Đặc khu Phú Quý',
+            ],
+            'langson' => [
+                'Phường Đông Kinh',
+                'Phường Lương Văn Tri',
+                'Phường Kỳ Lừa',
+                'Phường Tam Thanh',
+                'Xã Cao Lộc',
+                'Xã Hữu Lũng',
+                'Xã Chi Lăng',
+                'Xã Lộc Bình',
+                'Xã Văn Lãng',
+            ],
+            'laocai' => [
+                'Phường Lào Cai',
+                'Phường Cam Đường',
+                'Phường Sa Pa',
+                'Phường Yên Bái',
+                'Phường Nghĩa Lộ',
+                'Xã Bảo Thắng',
+                'Xã Bảo Yên',
+                'Xã Bát Xát',
+                'Xã Bắc Hà',
+                'Xã Văn Yên',
+                'Xã Lục Yên',
+                'Xã Trấn Yên',
+            ],
+            'nghean' => [
+                'Phường Trường Vinh',
+                'Phường Thành Vinh',
+                'Phường Vinh Hưng',
+                'Phường Vinh Phú',
+                'Phường Cửa Lò',
+                'Phường Hoàng Mai',
+                'Phường Thái Hòa',
+                'Xã Hưng Nguyên',
+                'Xã Nghi Lộc',
+                'Xã Diễn Châu',
+                'Xã Quỳnh Lưu',
+                'Xã Yên Thành',
+                'Xã Đô Lương',
+                'Xã Thanh Chương',
+                'Xã Nam Đàn',
+            ],
+            'ninhbinh' => [
+                'Phường Hoa Lư',
+                'Phường Nam Hoa Lư',
+                'Phường Tam Điệp',
+                'Phường Nam Định',
+                'Phường Thiên Trường',
+                'Phường Phủ Lý',
+                'Phường Hà Nam',
+                'Phường Duy Tiên',
+                'Phường Kim Bảng',
+                'Xã Gia Viễn',
+                'Xã Yên Khánh',
+                'Xã Kim Sơn',
+                'Xã Hải Hậu',
+                'Xã Giao Thủy',
+                'Xã Xuân Trường',
+                'Xã Ý Yên',
+            ],
+            'phutho' => [
+                'Phường Việt Trì',
+                'Phường Nông Trang',
+                'Phường Phú Thọ',
+                'Phường Vĩnh Yên',
+                'Phường Phúc Yên',
+                'Phường Hòa Bình',
+                'Xã Lâm Thao',
+                'Xã Phù Ninh',
+                'Xã Thanh Thủy',
+                'Xã Bình Xuyên',
+                'Xã Vĩnh Tường',
+                'Xã Yên Lạc',
+                'Xã Lương Sơn',
+                'Xã Mai Châu',
+            ],
+            'quangngai' => [
+                'Phường Cẩm Thành',
+                'Phường Nghĩa Lộ',
+                'Phường Trương Quang Trọng',
+                'Phường Đức Phổ',
+                'Phường Kon Tum',
+                'Phường Đăk Cấm',
+                'Xã Bình Sơn',
+                'Xã Sơn Tịnh',
+                'Xã Tư Nghĩa',
+                'Xã Mộ Đức',
+                'Xã Ngọc Hồi',
+                'Xã Đăk Hà',
+                'Đặc khu Lý Sơn',
+            ],
+            'quangninh' => [
+                'Phường Hạ Long',
+                'Phường Hồng Gai',
+                'Phường Bãi Cháy',
+                'Phường Cẩm Phả',
+                'Phường Cửa Ông',
+                'Phường Uông Bí',
+                'Phường Móng Cái',
+                'Phường Đông Triều',
+                'Phường Quảng Yên',
+                'Xã Tiên Yên',
+                'Xã Hải Hà',
+                'Xã Đầm Hà',
+                'Đặc khu Vân Đồn',
+                'Đặc khu Cô Tô',
+            ],
+            'quangtri' => [
+                'Phường Đông Hà',
+                'Phường Nam Đông Hà',
+                'Phường Quảng Trị',
+                'Phường Đồng Hới',
+                'Phường Đồng Thuận',
+                'Phường Ba Đồn',
+                'Xã Vĩnh Linh',
+                'Xã Gio Linh',
+                'Xã Triệu Phong',
+                'Xã Hải Lăng',
+                'Xã Hướng Hóa',
+                'Xã Lệ Thủy',
+                'Xã Quảng Ninh',
+                'Xã Bố Trạch',
+                'Đặc khu Cồn Cỏ',
+            ],
+            'sonla' => [
+                'Phường Tô Hiệu',
+                'Phường Chiềng Cơi',
+                'Phường Chiềng Sinh',
+                'Phường Mộc Châu',
+                'Phường Thảo Nguyên',
+                'Xã Mai Sơn',
+                'Xã Thuận Châu',
+                'Xã Yên Châu',
+                'Xã Phù Yên',
+            ],
+            'tayninh' => [
+                'Phường Tân Ninh',
+                'Phường Bình Minh (Tây Ninh)',
+                'Phường Hòa Thành',
+                'Phường Long Hoa',
+                'Phường Trảng Bàng',
+                'Phường Gò Dầu',
+                'Phường Tân An',
+                'Phường Long An',
+                'Phường Kiến Tường',
+                'Xã Dương Minh Châu',
+                'Xã Châu Thành (Tây Ninh)',
+                'Xã Tân Biên',
+                'Xã Bến Lức',
+                'Xã Đức Hòa',
+                'Xã Cần Giuộc',
+                'Xã Cần Đước',
+            ],
+            'thainguyen' => [
+                'Phường Phan Đình Phùng',
+                'Phường Gia Sàng',
+                'Phường Tích Lương',
+                'Phường Phổ Yên',
+                'Phường Sông Công',
+                'Phường Bắc Kạn',
+                'Xã Phú Bình',
+                'Xã Đại Từ',
+                'Xã Đồng Hỷ',
+                'Xã Phú Lương',
+                'Xã Ba Bể',
+                'Xã Chợ Đồn',
+            ],
+            'thanhhoa' => [
+                'Phường Hạc Thành',
+                'Phường Quảng Phú',
+                'Phường Đông Quang',
+                'Phường Sầm Sơn',
+                'Phường Bỉm Sơn',
+                'Phường Nghi Sơn',
+                'Xã Hoằng Hóa',
+                'Xã Quảng Xương',
+                'Xã Đông Sơn',
+                'Xã Triệu Sơn',
+                'Xã Thọ Xuân',
+                'Xã Nông Cống',
+                'Xã Hà Trung',
+                'Xã Nga Sơn',
+            ],
+            'tuyenquang' => [
+                'Phường Minh Xuân',
+                'Phường Nông Tiến',
+                'Phường Mỹ Lâm',
+                'Phường Hà Giang',
+                'Xã Sơn Dương',
+                'Xã Yên Sơn',
+                'Xã Hàm Yên',
+                'Xã Chiêm Hóa',
+                'Xã Bắc Quang',
+                'Xã Vị Xuyên',
+                'Xã Đồng Văn',
+                'Xã Mèo Vạc',
+            ],
+            'vinhlong' => [
+                'Phường Long Châu',
+                'Phường Tân Hạnh',
+                'Phường Bình Minh',
+                'Phường Bến Tre',
+                'Phường Phú Khương',
+                'Phường Trà Vinh',
+                'Phường Nguyệt Hóa',
+                'Phường Duyên Hải',
+                'Xã Long Hồ',
+                'Xã Mang Thít',
+                'Xã Vũng Liêm',
+                'Xã Tam Bình',
+                'Xã Châu Thành (Bến Tre)',
+                'Xã Mỏ Cày',
+                'Xã Ba Tri',
+                'Xã Càng Long',
+                'Xã Cầu Kè',
+                'Xã Tiểu Cần',
+            ],
+        ];
+
+        $list = $map[$provinceId] ?? ['Phường Trung tâm'];
+        $result = [];
+        foreach ($list as $idx => $name) {
+            $result[] = [
+                'code' => $provinceId . '_' . ($idx + 1),
+                'name' => $name,
             ];
         }
 
-        // 201: Hà Nội
-        if ($provinceId === 201) {
-            return [
-                ['id' => 1482, 'name' => 'Quận Ba Đình'],
-                ['id' => 1483, 'name' => 'Quận Hoàn Kiếm'],
-                ['id' => 1484, 'name' => 'Quận Tây Hồ'],
-                ['id' => 1485, 'name' => 'Quận Long Biên'],
-                ['id' => 1486, 'name' => 'Quận Cầu Giấy'],
-                ['id' => 1487, 'name' => 'Quận Đống Đa'],
-                ['id' => 1488, 'name' => 'Quận Hai Bà Trưng'],
-                ['id' => 1489, 'name' => 'Quận Hoàng Mai'],
-                ['id' => 1490, 'name' => 'Quận Thanh Xuân'],
-                ['id' => 1491, 'name' => 'Quận Nam Từ Liêm'],
-                ['id' => 1492, 'name' => 'Quận Bắc Từ Liêm'],
-                ['id' => 1493, 'name' => 'Quận Hà Đông'],
-                ['id' => 1538, 'name' => 'Thị Xã Sơn Tây'],
-                ['id' => 1539, 'name' => 'Huyện Ba Vì'],
-                ['id' => 1540, 'name' => 'Huyện Đông Anh'],
-                ['id' => 1541, 'name' => 'Huyện Gia Lâm'],
-                ['id' => 1542, 'name' => 'Huyện Sóc Sơn'],
-                ['id' => 1543, 'name' => 'Huyện Thanh Trì'],
-            ];
-        }
-
-        // 203: Đà Nẵng
-        if ($provinceId === 203) {
-            return [
-                ['id' => 1526, 'name' => 'Quận Hải Châu'],
-                ['id' => 1527, 'name' => 'Quận Thanh Khê'],
-                ['id' => 1528, 'name' => 'Quận Sơn Trà'],
-                ['id' => 1529, 'name' => 'Quận Ngũ Hành Sơn'],
-                ['id' => 1530, 'name' => 'Quận Liên Chiểu'],
-                ['id' => 1531, 'name' => 'Quận Cẩm Lệ'],
-                ['id' => 1532, 'name' => 'Huyện Hòa Vang'],
-            ];
-        }
-
-        return [];
+        return $result;
     }
 
     /**
-     * Fallback danh sách phường/xã khi GHN API offline
+     * Phí vận chuyển cố định 25.000đ (Đã bỏ tính phí qua GHN)
      */
-    protected function getFallbackWards(int $districtId): array
+    public function calculateShippingFee(int $toDistrictId = 0, string $toWardCode = '', int $weightInGrams = 500, int $insuranceValue = 0): int
     {
-        return [
-            ['code' => '90001', 'name' => 'Phường 1'],
-            ['code' => '90002', 'name' => 'Phường 2'],
-            ['code' => '90003', 'name' => 'Phường 3'],
-            ['code' => '90004', 'name' => 'Phường 4'],
-            ['code' => '90005', 'name' => 'Phường 5'],
-            ['code' => '90006', 'name' => 'Phường Bến Nghé'],
-            ['code' => '90007', 'name' => 'Phường Bến Thành'],
-            ['code' => '90008', 'name' => 'Phường Tân Định'],
-            ['code' => '90009', 'name' => 'Phường Đa Kao'],
-            ['code' => '90010', 'name' => 'Xã Trung Tâm'],
-            ['code' => '90011', 'name' => 'Thị Trấn'],
-        ];
+        return 25000;
     }
 }

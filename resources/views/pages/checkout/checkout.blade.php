@@ -96,7 +96,7 @@
                             >
                         </div>
 
-                        <!-- City (GHN API) -->
+                        <!-- Tỉnh / Thành phố (34 Tỉnh/TP sau sáp nhập) -->
                         <div>
                             <label class="block text-xs font-semibold text-slate-700 mb-1.5">
                                 Tỉnh / Thành phố <span class="text-rose-500">*</span>
@@ -112,35 +112,10 @@
                             </select>
                         </div>
 
-                        <!-- District (GHN API / Nhập tay dự phòng) -->
+                        <!-- Phường / Xã / Đặc khu (Mô hình 2 cấp sau sáp nhập) -->
                         <div>
                             <label class="block text-xs font-semibold text-slate-700 mb-1.5">
-                                Quận / Huyện <span class="text-rose-500">*</span>
-                            </label>
-                            @if (!empty($districts))
-                                <select 
-                                    wire:model.live="district_id" 
-                                    class="w-full text-xs border border-slate-200 rounded-xl px-3.5 py-2.5 focus:border-[#CE171F] focus:outline-none bg-white cursor-pointer" 
-                                >
-                                    <option value="">-- Chọn Quận / Huyện --</option>
-                                    @foreach ($districts as $d)
-                                        <option value="{{ $d['id'] }}">{{ $d['name'] }}</option>
-                                    @endforeach
-                                </select>
-                            @else
-                                <input 
-                                    wire:model="shipping_district" 
-                                    type="text" 
-                                    placeholder="Nhập Quận / Huyện nhận hàng" 
-                                    class="w-full text-xs border border-slate-200 rounded-xl px-3.5 py-2.5 focus:border-[#CE171F] focus:outline-none bg-white"
-                                >
-                            @endif
-                        </div>
-
-                        <!-- Ward (GHN API / Nhập tay dự phòng) -->
-                        <div class="sm:col-span-2">
-                            <label class="block text-xs font-semibold text-slate-700 mb-1.5">
-                                Phường / Xã <span class="text-rose-500">*</span>
+                                Phường / Xã / Đặc khu <span class="text-rose-500">*</span>
                             </label>
                             @if (!empty($wards))
                                 <select 
@@ -151,7 +126,16 @@
                                     @foreach ($wards as $w)
                                         <option value="{{ $w['code'] }}">{{ $w['name'] }}</option>
                                     @endforeach
+                                    <option value="__custom__">-- Nhập Phường / Xã khác --</option>
                                 </select>
+                                @if ($ward_code === '__custom__')
+                                    <input 
+                                        wire:model.live="custom_ward" 
+                                        type="text" 
+                                        placeholder="Nhập tên Phường / Xã / Đặc khu của bạn..." 
+                                        class="w-full mt-2 text-xs border border-slate-200 rounded-xl px-3.5 py-2.5 focus:border-[#CE171F] focus:outline-none bg-white"
+                                    >
+                                @endif
                             @else
                                 <input 
                                     wire:model="shipping_ward" 
