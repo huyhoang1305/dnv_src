@@ -96,52 +96,212 @@
                             >
                         </div>
 
-                        <!-- Tỉnh / Thành phố (34 Tỉnh/TP sau sáp nhập) -->
-                        <div>
+                        <!-- Tỉnh / Thành phố (34 Tỉnh/TP sau sáp nhập - Có ô Tìm kiếm nhanh) -->
+                        <div 
+                            class="relative"
+                            x-data="{
+                                open: false,
+                                search: '',
+                                items: @js($provinces),
+                                selectedId: @entangle('province_id').live,
+                                norm(s) {
+                                    return (s || '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[đĐ]/g, 'd').toLowerCase().trim();
+                                },
+                                get selectedLabel() {
+                                    const found = this.items.find(i => String(i.id) === String(this.selectedId));
+                                    return found ? found.name : '-- Chọn Tỉnh / Thành phố --';
+                                },
+                                get filteredItems() {
+                                    const q = this.norm(this.search);
+                                    if (!q) return this.items;
+                                    return this.items.filter(i => this.norm(i.name).includes(q));
+                                },
+                                selectItem(item) {
+                                    this.selectedId = String(item.id);
+                                    this.open = false;
+                                    this.search = '';
+                                }
+                            }"
+                            @click.outside="open = false"
+                        >
                             <label class="block text-xs font-semibold text-slate-700 mb-1.5">
                                 Tỉnh / Thành phố <span class="text-rose-500">*</span>
                             </label>
-                            <select 
-                                wire:model.live="province_id" 
-                                class="w-full text-xs border border-slate-200 rounded-xl px-3.5 py-2.5 focus:border-[#CE171F] focus:outline-none bg-white cursor-pointer"
+                            <button 
+                                type="button"
+                                @click="open = !open; if (open) $nextTick(() => $refs.provinceSearchInput.focus())"
+                                class="w-full text-xs border border-slate-200 rounded-xl px-3.5 py-2.5 focus:border-[#CE171F] focus:outline-none bg-white cursor-pointer flex items-center justify-between text-left transition hover:border-slate-300"
                             >
-                                <option value="">-- Chọn Tỉnh / Thành phố --</option>
-                                @foreach ($provinces as $p)
-                                    <option value="{{ $p['id'] }}">{{ $p['name'] }}</option>
-                                @endforeach
-                            </select>
+                                <span class="truncate font-medium text-slate-800" x-text="selectedLabel"></span>
+                                <i class="fa-solid fa-chevron-down text-[10px] text-slate-400 transition-transform duration-150 shrink-0 ml-2" :class="open ? 'rotate-180 text-[#CE171F]' : ''"></i>
+                            </button>
+
+                            <div 
+                                x-show="open"
+                                x-transition.opacity.duration.150ms
+                                style="display: none;"
+                                class="absolute left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 overflow-hidden"
+                            >
+                                <!-- Ô tìm kiếm Tỉnh / Thành phố -->
+                                <div class="p-2 border-b border-slate-100 bg-slate-50/70">
+                                    <div class="relative flex items-center">
+                                        <i class="fa-solid fa-magnifying-glass text-[11px] text-slate-400 absolute left-3 pointer-events-none"></i>
+                                        <input 
+                                            x-ref="provinceSearchInput"
+                                            x-model="search"
+                                            @keydown.escape.stop="open = false"
+                                            type="text" 
+                                            placeholder="Gõ tên Tỉnh / Thành phố để tìm..." 
+                                            class="w-full pl-8 pr-7 py-1.5 text-xs bg-white border border-slate-200 rounded-xl focus:border-[#CE171F] focus:outline-none text-slate-800"
+                                        >
+                                        <button 
+                                            x-show="search.length > 0"
+                                            @click="search = ''; $refs.provinceSearchInput.focus()"
+                                            type="button"
+                                            class="absolute right-2.5 text-slate-400 hover:text-slate-600 text-xs cursor-pointer"
+                                        >
+                                            <i class="fa-solid fa-circle-xmark"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Danh sách Tỉnh / Thành phố -->
+                                <ul class="max-h-60 overflow-y-auto divide-y divide-slate-50 py-1 text-xs">
+                                    <template x-for="item in filteredItems" :key="item.id">
+                                        <li>
+                                            <button 
+                                                type="button"
+                                                @click="selectItem(item)"
+                                                class="w-full px-3.5 py-2 text-left flex items-center justify-between hover:bg-red-50/70 transition cursor-pointer"
+                                                :class="String(selectedId) === String(item.id) ? 'bg-red-50 text-[#CE171F] font-bold' : 'text-slate-700 font-normal'"
+                                            >
+                                                <span class="truncate" x-text="item.name"></span>
+                                                <i x-show="String(selectedId) === String(item.id)" class="fa-solid fa-check text-[10px] text-[#CE171F] shrink-0 ml-2"></i>
+                                            </button>
+                                        </li>
+                                    </template>
+                                    <li x-show="filteredItems.length === 0" class="px-3.5 py-3 text-center text-slate-400 text-xs">
+                                        Không tìm thấy Tỉnh / Thành phố phù hợp
+                                    </li>
+                                </ul>
+                            </div>
                         </div>
 
-                        <!-- Phường / Xã / Đặc khu (Mô hình 2 cấp sau sáp nhập) -->
-                        <div>
+                        <!-- Phường / Xã / Đặc khu (Mô hình 2 cấp sau sáp nhập - Có ô Tìm kiếm nhanh) -->
+                        <div 
+                            class="relative"
+                            wire:key="ward-select-box-{{ $province_id }}"
+                            x-data="{
+                                open: false,
+                                search: '',
+                                items: @js($wards),
+                                selectedCode: @entangle('ward_code').live,
+                                norm(s) {
+                                    return (s || '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[đĐ]/g, 'd').toLowerCase().trim();
+                                },
+                                get selectedLabel() {
+                                    if (this.selectedCode === '__custom__') {
+                                        return '-- Nhập Phường / Xã khác --';
+                                    }
+                                    const found = this.items.find(i => String(i.code) === String(this.selectedCode));
+                                    return found ? found.name : '-- Chọn Phường / Xã --';
+                                },
+                                get filteredItems() {
+                                    const q = this.norm(this.search);
+                                    if (!q) return this.items;
+                                    return this.items.filter(i => this.norm(i.name).includes(q));
+                                },
+                                selectItem(item) {
+                                    this.selectedCode = String(item.code);
+                                    this.open = false;
+                                    this.search = '';
+                                },
+                                selectCustom(prefill = '') {
+                                    this.selectedCode = '__custom__';
+                                    if (prefill) {
+                                        $wire.set('custom_ward', prefill);
+                                    }
+                                    this.open = false;
+                                    this.search = '';
+                                }
+                            }"
+                            @click.outside="open = false"
+                        >
                             <label class="block text-xs font-semibold text-slate-700 mb-1.5">
                                 Phường / Xã / Đặc khu <span class="text-rose-500">*</span>
                             </label>
-                            @if (!empty($wards))
-                                <select 
-                                    wire:model.live="ward_code" 
-                                    class="w-full text-xs border border-slate-200 rounded-xl px-3.5 py-2.5 focus:border-[#CE171F] focus:outline-none bg-white cursor-pointer" 
-                                >
-                                    <option value="">-- Chọn Phường / Xã --</option>
-                                    @foreach ($wards as $w)
-                                        <option value="{{ $w['code'] }}">{{ $w['name'] }}</option>
-                                    @endforeach
-                                    <option value="__custom__">-- Nhập Phường / Xã khác --</option>
-                                </select>
-                                @if ($ward_code === '__custom__')
-                                    <input 
-                                        wire:model.live="custom_ward" 
-                                        type="text" 
-                                        placeholder="Nhập tên Phường / Xã / Đặc khu của bạn..." 
-                                        class="w-full mt-2 text-xs border border-slate-200 rounded-xl px-3.5 py-2.5 focus:border-[#CE171F] focus:outline-none bg-white"
-                                    >
-                                @endif
-                            @else
+                            <button 
+                                type="button"
+                                @click="open = !open; if (open) $nextTick(() => $refs.wardSearchInput.focus())"
+                                class="w-full text-xs border border-slate-200 rounded-xl px-3.5 py-2.5 focus:border-[#CE171F] focus:outline-none bg-white cursor-pointer flex items-center justify-between text-left transition hover:border-slate-300"
+                            >
+                                <span class="truncate font-medium text-slate-800" x-text="selectedLabel"></span>
+                                <i class="fa-solid fa-chevron-down text-[10px] text-slate-400 transition-transform duration-150 shrink-0 ml-2" :class="open ? 'rotate-180 text-[#CE171F]' : ''"></i>
+                            </button>
+
+                            <div 
+                                x-show="open"
+                                x-transition.opacity.duration.150ms
+                                style="display: none;"
+                                class="absolute left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 overflow-hidden"
+                            >
+                                <!-- Ô tìm kiếm Phường / Xã -->
+                                <div class="p-2 border-b border-slate-100 bg-slate-50/70">
+                                    <div class="relative flex items-center">
+                                        <i class="fa-solid fa-magnifying-glass text-[11px] text-slate-400 absolute left-3 pointer-events-none"></i>
+                                        <input 
+                                            x-ref="wardSearchInput"
+                                            x-model="search"
+                                            @keydown.escape.stop="open = false"
+                                            type="text" 
+                                            placeholder="Gõ tên Phường / Xã để tìm nhanh..." 
+                                            class="w-full pl-8 pr-7 py-1.5 text-xs bg-white border border-slate-200 rounded-xl focus:border-[#CE171F] focus:outline-none text-slate-800"
+                                        >
+                                        <button 
+                                            x-show="search.length > 0"
+                                            @click="search = ''; $refs.wardSearchInput.focus()"
+                                            type="button"
+                                            class="absolute right-2.5 text-slate-400 hover:text-slate-600 text-xs cursor-pointer"
+                                        >
+                                            <i class="fa-solid fa-circle-xmark"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Danh sách Phường / Xã -->
+                                <ul class="max-h-60 overflow-y-auto divide-y divide-slate-50 py-1 text-xs">
+                                    <template x-for="item in filteredItems" :key="item.code">
+                                        <li>
+                                            <button 
+                                                type="button"
+                                                @click="selectItem(item)"
+                                                class="w-full px-3.5 py-2 text-left flex items-center justify-between hover:bg-red-50/70 transition cursor-pointer"
+                                                :class="String(selectedCode) === String(item.code) ? 'bg-red-50 text-[#CE171F] font-bold' : 'text-slate-700 font-normal'"
+                                            >
+                                                <span class="truncate" x-text="item.name"></span>
+                                                <i x-show="String(selectedCode) === String(item.code)" class="fa-solid fa-check text-[10px] text-[#CE171F] shrink-0 ml-2"></i>
+                                            </button>
+                                        </li>
+                                    </template>
+                                    <li class="border-t border-slate-100">
+                                        <button 
+                                            type="button"
+                                            @click="selectCustom(search.trim())"
+                                            class="w-full px-3.5 py-2 text-left flex items-center justify-between hover:bg-amber-50 text-amber-700 font-semibold transition cursor-pointer"
+                                        >
+                                            <span x-text="search.trim().length > 0 ? 'Sử dụng tên vừa nhập: &quot;' + search.trim() + '&quot;' : '-- Nhập Phường / Xã khác --'"></span>
+                                            <i class="fa-solid fa-pen text-[10px] shrink-0 ml-2"></i>
+                                        </button>
+                                    </li>
+                                </ul>
+                            </div>
+
+                            @if ($ward_code === '__custom__')
                                 <input 
-                                    wire:model="shipping_ward" 
+                                    wire:model.live="custom_ward" 
                                     type="text" 
-                                    placeholder="Nhập Phường / Xã nhận hàng" 
-                                    class="w-full text-xs border border-slate-200 rounded-xl px-3.5 py-2.5 focus:border-[#CE171F] focus:outline-none bg-white"
+                                    placeholder="Nhập tên Phường / Xã / Đặc khu của bạn..." 
+                                    class="w-full mt-2 text-xs border border-slate-200 rounded-xl px-3.5 py-2.5 focus:border-[#CE171F] focus:outline-none bg-white"
                                 >
                             @endif
                         </div>

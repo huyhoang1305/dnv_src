@@ -30,8 +30,8 @@ new #[Layout('layouts.app')] class extends Component
     public $provinces = [];
     public $wards = [];
 
-    public $province_id = 'hcm'; // Mặc định TP. Hồ Chí Minh
-    public $ward_code = 'hcm_1'; // Mặc định Phường Sài Gòn
+    public $province_id = '79'; // Mặc định TP. Hồ Chí Minh
+    public $ward_code = ''; // Mặc định Phường Sài Gòn
     public $custom_ward = '';
 
     public $shipping_city = 'TP. Hồ Chí Minh';
