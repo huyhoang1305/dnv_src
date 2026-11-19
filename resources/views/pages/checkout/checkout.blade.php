@@ -96,6 +96,141 @@
                             >
                         </div>
 
+                        <!-- CSS chuyên biệt cho Searchable Select Combobox -->
+                        <style>
+                            .dnv-select-btn {
+                                width: 100%;
+                                font-size: 12px;
+                                line-height: 1.4;
+                                color: #1e293b;
+                                font-weight: 500;
+                                background-color: rgba(248, 250, 252, 0.6);
+                                border: 1px solid #e2e8f0;
+                                border-radius: 12px;
+                                padding: 10px 14px;
+                                display: flex;
+                                align-items: center;
+                                justify-content: space-between;
+                                text-align: left;
+                                cursor: pointer;
+                                outline: none !important;
+                                transition: all 0.15s ease;
+                            }
+                            .dnv-select-btn:hover {
+                                border-color: #cbd5e1;
+                                background-color: #ffffff;
+                            }
+                            .dnv-select-btn.is-open {
+                                border-color: #CE171F;
+                                background-color: #ffffff;
+                                box-shadow: 0 0 0 3px rgba(206, 23, 31, 0.08);
+                            }
+                            .dnv-select-dropdown {
+                                position: absolute;
+                                left: 0;
+                                right: 0;
+                                top: calc(100% + 6px);
+                                z-index: 70;
+                                background-color: #ffffff;
+                                border: 1px solid #e2e8f0;
+                                border-radius: 14px;
+                                box-shadow: 0 12px 28px -4px rgba(15, 23, 42, 0.12), 0 4px 10px -2px rgba(15, 23, 42, 0.05);
+                                overflow: hidden;
+                            }
+                            .dnv-select-search-box {
+                                padding: 8px;
+                                border-bottom: 1px solid #f1f5f9;
+                                background-color: #ffffff;
+                            }
+                            .dnv-select-search-input {
+                                width: 100%;
+                                padding: 7px 28px 7px 30px;
+                                font-size: 12px;
+                                line-height: 1.4;
+                                color: #1e293b;
+                                background-color: #f8fafc;
+                                border: 1px solid #e2e8f0;
+                                border-radius: 9px;
+                                outline: none !important;
+                                transition: all 0.15s ease;
+                            }
+                            .dnv-select-search-input:focus {
+                                background-color: #ffffff;
+                                border-color: #94a3b8;
+                                box-shadow: 0 0 0 2px rgba(148, 163, 184, 0.12);
+                            }
+                            .dnv-select-list {
+                                max-height: 216px;
+                                overflow-y: auto;
+                                padding: 5px;
+                                background-color: #ffffff;
+                            }
+                            .dnv-select-list::-webkit-scrollbar {
+                                width: 5px;
+                            }
+                            .dnv-select-list::-webkit-scrollbar-track {
+                                background: transparent;
+                            }
+                            .dnv-select-list::-webkit-scrollbar-thumb {
+                                background: #cbd5e1;
+                                border-radius: 9999px;
+                            }
+                            .dnv-select-list::-webkit-scrollbar-thumb:hover {
+                                background: #94a3b8;
+                            }
+                            .dnv-select-item {
+                                width: 100%;
+                                display: flex;
+                                align-items: center;
+                                justify-content: space-between;
+                                gap: 8px;
+                                padding: 8px 11px;
+                                font-size: 12px;
+                                line-height: 1.4;
+                                color: #334155;
+                                font-weight: 400;
+                                background-color: transparent;
+                                border: none;
+                                border-radius: 8px;
+                                cursor: pointer;
+                                text-align: left;
+                                outline: none !important;
+                                transition: background-color 0.12s ease, color 0.12s ease;
+                                margin-bottom: 1px;
+                            }
+                            .dnv-select-item:hover {
+                                background-color: #f1f5f9;
+                                color: #0f172a;
+                            }
+                            .dnv-select-item.is-active {
+                                background-color: #fef2f2;
+                                color: #CE171F;
+                                font-weight: 600;
+                            }
+                            .dnv-select-custom-btn {
+                                width: 100%;
+                                display: flex;
+                                align-items: center;
+                                justify-content: space-between;
+                                gap: 8px;
+                                padding: 8px 11px;
+                                font-size: 12px;
+                                line-height: 1.4;
+                                color: #d97706;
+                                font-weight: 600;
+                                background-color: transparent;
+                                border: none;
+                                border-radius: 8px;
+                                cursor: pointer;
+                                text-align: left;
+                                outline: none !important;
+                                transition: background-color 0.12s ease;
+                            }
+                            .dnv-select-custom-btn:hover {
+                                background-color: #fffbeb;
+                            }
+                        </style>
+
                         <!-- Tỉnh / Thành phố (34 Tỉnh/TP sau sáp nhập - Có ô Tìm kiếm nhanh) -->
                         <div 
                             class="relative"
@@ -116,6 +251,15 @@
                                     if (!q) return this.items;
                                     return this.items.filter(i => this.norm(i.name).includes(q));
                                 },
+                                toggle() {
+                                    this.open = !this.open;
+                                    if (this.open) {
+                                        this.$nextTick(() => {
+                                            if (this.$refs.provinceList) this.$refs.provinceList.scrollTop = 0;
+                                            if (this.$refs.provinceSearchInput) this.$refs.provinceSearchInput.focus();
+                                        });
+                                    }
+                                },
                                 selectItem(item) {
                                     this.selectedId = String(item.id);
                                     this.open = false;
@@ -129,32 +273,31 @@
                             </label>
                             <button 
                                 type="button"
-                                @click="open = !open; if (open) $nextTick(() => $refs.provinceSearchInput.focus())"
-                                class="w-full text-xs rounded-xl px-3.5 py-2.5 cursor-pointer flex items-center justify-between text-left transition"
-                                :style="open ? 'border: 1px solid #CE171F; background-color: #ffffff; box-shadow: 0 0 0 3px rgba(206, 23, 31, 0.08);' : 'border: 1px solid #E2E8F0; background-color: #F8FAFC;'"
+                                @click="toggle()"
+                                class="dnv-select-btn"
+                                :class="{ 'is-open': open }"
                             >
-                                <span class="truncate font-medium text-slate-800" x-text="selectedLabel"></span>
+                                <span class="truncate" x-text="selectedLabel"></span>
                                 <i class="fa-solid fa-chevron-down text-[10px] text-slate-400 transition-transform duration-150 shrink-0 ml-2" :class="open ? 'rotate-180 text-[#CE171F]' : ''"></i>
                             </button>
 
                             <div 
                                 x-show="open"
                                 x-transition.opacity.duration.120ms
-                                style="display: none; position: absolute; left: 0; right: 0; top: 100%; margin-top: 6px; z-index: 60; background-color: #ffffff; border: 1px solid #E2E8F0; border-radius: 14px; box-shadow: 0 14px 32px -4px rgba(15, 23, 42, 0.14), 0 4px 10px -2px rgba(15, 23, 42, 0.06); overflow: hidden;"
+                                style="display: none;"
+                                class="dnv-select-dropdown"
                             >
                                 <!-- Ô tìm kiếm Tỉnh / Thành phố -->
-                                <div style="padding: 8px; border-bottom: 1px solid #F1F5F9; background-color: #FFFFFF;">
+                                <div class="dnv-select-search-box">
                                     <div class="relative flex items-center">
-                                        <i class="fa-solid fa-magnifying-glass text-[11px] text-slate-400" style="position: absolute; left: 11px; pointer-events: none;"></i>
+                                        <i class="fa-solid fa-magnifying-glass text-[11px] text-slate-400" style="position: absolute; left: 10px; pointer-events: none;"></i>
                                         <input 
                                             x-ref="provinceSearchInput"
                                             x-model="search"
                                             @keydown.escape.stop="open = false"
                                             type="text" 
                                             placeholder="Tìm Tỉnh / Thành phố..." 
-                                            style="width: 100%; padding: 7px 28px 7px 30px; font-size: 12px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; color: #1E293B; outline: none;"
-                                            onfocus="this.style.borderColor='#CBD5E1'; this.style.backgroundColor='#FFFFFF';"
-                                            onblur="this.style.borderColor='#E2E8F0'; this.style.backgroundColor='#F8FAFC';"
+                                            class="dnv-select-search-input"
                                         >
                                         <button 
                                             x-show="search.length > 0"
@@ -168,24 +311,20 @@
                                     </div>
                                 </div>
 
-                                <!-- Danh sách Tỉnh / Thành phố (Có thanh cuộn gọn, không kẻ viền đen) -->
-                                <div style="max-height: 215px; overflow-y: auto; padding: 5px;">
+                                <!-- Danh sách Tỉnh / Thành phố -->
+                                <div x-ref="provinceList" class="dnv-select-list">
                                     <template x-for="item in filteredItems" :key="item.id">
                                         <button 
                                             type="button"
                                             @click="selectItem(item)"
-                                            class="w-full text-left flex items-center justify-between transition cursor-pointer"
-                                            style="padding: 8px 10px; border-radius: 9px; font-size: 12px; margin-bottom: 1px; border: none;"
-                                            :style="String(selectedId) === String(item.id) ? 'background-color: #FEF2F2; color: #CE171F; font-weight: 600;' : 'background-color: transparent; color: #334155; font-weight: 400;'"
-                                            onmouseover="if (!this.dataset.active) this.style.backgroundColor='#F1F5F9'"
-                                            onmouseout="if (!this.dataset.active) this.style.backgroundColor='transparent'"
-                                            :data-active="String(selectedId) === String(item.id) ? '1' : ''"
+                                            class="dnv-select-item"
+                                            :class="{ 'is-active': String(selectedId) === String(item.id) }"
                                         >
                                             <span class="truncate" x-text="item.name"></span>
-                                            <i x-show="String(selectedId) === String(item.id)" class="fa-solid fa-check text-[10px] shrink-0 ml-2" style="color: #CE171F;"></i>
+                                            <i x-show="String(selectedId) === String(item.id)" class="fa-solid fa-check text-[10px] shrink-0" style="color: #CE171F;"></i>
                                         </button>
                                     </template>
-                                    <div x-show="filteredItems.length === 0" style="padding: 14px 10px; text-align: center; color: #94A3B8; font-size: 12px;">
+                                    <div x-show="filteredItems.length === 0" style="padding: 14px 10px; text-align: center; color: #94a3b8; font-size: 12px;">
                                         Không tìm thấy Tỉnh / Thành phố phù hợp
                                     </div>
                                 </div>
@@ -216,6 +355,15 @@
                                     if (!q) return this.items;
                                     return this.items.filter(i => this.norm(i.name).includes(q));
                                 },
+                                toggle() {
+                                    this.open = !this.open;
+                                    if (this.open) {
+                                        this.$nextTick(() => {
+                                            if (this.$refs.wardList) this.$refs.wardList.scrollTop = 0;
+                                            if (this.$refs.wardSearchInput) this.$refs.wardSearchInput.focus();
+                                        });
+                                    }
+                                },
                                 selectItem(item) {
                                     this.selectedCode = String(item.code);
                                     this.open = false;
@@ -237,32 +385,31 @@
                             </label>
                             <button 
                                 type="button"
-                                @click="open = !open; if (open) $nextTick(() => $refs.wardSearchInput.focus())"
-                                class="w-full text-xs rounded-xl px-3.5 py-2.5 cursor-pointer flex items-center justify-between text-left transition"
-                                :style="open ? 'border: 1px solid #CE171F; background-color: #ffffff; box-shadow: 0 0 0 3px rgba(206, 23, 31, 0.08);' : 'border: 1px solid #E2E8F0; background-color: #F8FAFC;'"
+                                @click="toggle()"
+                                class="dnv-select-btn"
+                                :class="{ 'is-open': open }"
                             >
-                                <span class="truncate font-medium text-slate-800" x-text="selectedLabel"></span>
+                                <span class="truncate" x-text="selectedLabel"></span>
                                 <i class="fa-solid fa-chevron-down text-[10px] text-slate-400 transition-transform duration-150 shrink-0 ml-2" :class="open ? 'rotate-180 text-[#CE171F]' : ''"></i>
                             </button>
 
                             <div 
                                 x-show="open"
                                 x-transition.opacity.duration.120ms
-                                style="display: none; position: absolute; left: 0; right: 0; top: 100%; margin-top: 6px; z-index: 60; background-color: #ffffff; border: 1px solid #E2E8F0; border-radius: 14px; box-shadow: 0 14px 32px -4px rgba(15, 23, 42, 0.14), 0 4px 10px -2px rgba(15, 23, 42, 0.06); overflow: hidden;"
+                                style="display: none;"
+                                class="dnv-select-dropdown"
                             >
                                 <!-- Ô tìm kiếm Phường / Xã -->
-                                <div style="padding: 8px; border-bottom: 1px solid #F1F5F9; background-color: #FFFFFF;">
+                                <div class="dnv-select-search-box">
                                     <div class="relative flex items-center">
-                                        <i class="fa-solid fa-magnifying-glass text-[11px] text-slate-400" style="position: absolute; left: 11px; pointer-events: none;"></i>
+                                        <i class="fa-solid fa-magnifying-glass text-[11px] text-slate-400" style="position: absolute; left: 10px; pointer-events: none;"></i>
                                         <input 
                                             x-ref="wardSearchInput"
                                             x-model="search"
                                             @keydown.escape.stop="open = false"
                                             type="text" 
                                             placeholder="Tìm Phường / Xã / Đặc khu..." 
-                                            style="width: 100%; padding: 7px 28px 7px 30px; font-size: 12px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; color: #1E293B; outline: none;"
-                                            onfocus="this.style.borderColor='#CBD5E1'; this.style.backgroundColor='#FFFFFF';"
-                                            onblur="this.style.borderColor='#E2E8F0'; this.style.backgroundColor='#F8FAFC';"
+                                            class="dnv-select-search-input"
                                         >
                                         <button 
                                             x-show="search.length > 0"
@@ -276,34 +423,27 @@
                                     </div>
                                 </div>
 
-                                <!-- Danh sách Phường / Xã (Có thanh cuộn gọn, không kẻ viền đen) -->
-                                <div style="max-height: 215px; overflow-y: auto; padding: 5px;">
+                                <!-- Danh sách Phường / Xã -->
+                                <div x-ref="wardList" class="dnv-select-list">
                                     <template x-for="item in filteredItems" :key="item.code">
                                         <button 
                                             type="button"
                                             @click="selectItem(item)"
-                                            class="w-full text-left flex items-center justify-between transition cursor-pointer"
-                                            style="padding: 8px 10px; border-radius: 9px; font-size: 12px; margin-bottom: 1px; border: none;"
-                                            :style="String(selectedCode) === String(item.code) ? 'background-color: #FEF2F2; color: #CE171F; font-weight: 600;' : 'background-color: transparent; color: #334155; font-weight: 400;'"
-                                            onmouseover="if (!this.dataset.active) this.style.backgroundColor='#F1F5F9'"
-                                            onmouseout="if (!this.dataset.active) this.style.backgroundColor='transparent'"
-                                            :data-active="String(selectedCode) === String(item.code) ? '1' : ''"
+                                            class="dnv-select-item"
+                                            :class="{ 'is-active': String(selectedCode) === String(item.code) }"
                                         >
                                             <span class="truncate" x-text="item.name"></span>
-                                            <i x-show="String(selectedCode) === String(item.code)" class="fa-solid fa-check text-[10px] shrink-0 ml-2" style="color: #CE171F;"></i>
+                                            <i x-show="String(selectedCode) === String(item.code)" class="fa-solid fa-check text-[10px] shrink-0" style="color: #CE171F;"></i>
                                         </button>
                                     </template>
-                                    <div style="border-top: 1px solid #F1F5F9; margin-top: 4px; padding-top: 4px;">
+                                    <div style="border-top: 1px solid #f1f5f9; margin-top: 4px; padding-top: 4px;">
                                         <button 
                                             type="button"
                                             @click="selectCustom(search.trim())"
-                                            class="w-full text-left flex items-center justify-between transition cursor-pointer"
-                                            style="padding: 8px 10px; border-radius: 9px; font-size: 12px; color: #D97706; font-weight: 600;"
-                                            onmouseover="this.style.backgroundColor='#FFFBEB'"
-                                            onmouseout="this.style.backgroundColor='transparent'"
+                                            class="dnv-select-custom-btn"
                                         >
                                             <span class="truncate" x-text="search.trim().length > 0 ? 'Dùng tên vừa nhập: &quot;' + search.trim() + '&quot;' : '+ Nhập Phường / Xã khác'"></span>
-                                            <i class="fa-solid fa-pen text-[10px] shrink-0 ml-2"></i>
+                                            <i class="fa-solid fa-pen text-[10px] shrink-0"></i>
                                         </button>
                                     </div>
                                 </div>
